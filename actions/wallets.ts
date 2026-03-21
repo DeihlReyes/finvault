@@ -39,14 +39,18 @@ export async function createWallet(
     data: { userId, ...result.data },
   });
 
-  // Award XP for first wallet
-  const walletCount = await db.wallet.count({ where: { userId } });
-  if (walletCount === 1) {
-    await awardXP(userId, "FIRST_WALLET");
-    await checkAndAwardAchievement(userId, "WALLET_WIZARD");
-  }
+  // Fire-and-forget gamification
+  db.wallet.count({ where: { userId } }).then((walletCount) => {
+    if (walletCount === 1) {
+      return Promise.all([
+        awardXP(userId, "FIRST_WALLET"),
+        checkAndAwardAchievement(userId, "WALLET_WIZARD"),
+      ]);
+    }
+  }).catch(console.error);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/wallets");
+  revalidatePath("/dashboard");
   return { success: true, data: { id: wallet.id } };
 }
 
@@ -81,7 +85,8 @@ export async function updateWallet(
     data: result.data,
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/wallets");
+  revalidatePath("/dashboard");
   return { success: true, data: { id } };
 }
 
@@ -94,6 +99,7 @@ export async function archiveWallet(id: string): Promise<ActionResult> {
     data: { isArchived: true },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/wallets");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }

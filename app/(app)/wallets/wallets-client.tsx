@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { WalletForm } from "@/components/wallets/wallet-form";
@@ -60,7 +60,7 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
     setArchiveTarget(null);
     if (result.success) {
       toast.success("Wallet archived");
-      router.refresh();
+      startTransition(() => router.refresh());
     } else {
       toast.error(result.error);
     }
@@ -78,7 +78,7 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
 
   function onFormSuccess() {
     setSheetOpen(false);
-    router.refresh();
+    startTransition(() => router.refresh());
   }
 
   return (

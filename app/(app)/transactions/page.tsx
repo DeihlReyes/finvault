@@ -45,6 +45,7 @@ async function TransactionList({
         },
       },
       orderBy: { date: "desc" },
+      take: 200,
       include: { category: true, wallet: true },
     }),
     db.wallet.findMany({

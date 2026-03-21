@@ -46,9 +46,9 @@ export async function createRecurringRule(
     },
   });
 
-  await awardXP(auth.supabaseId, "RECURRING_RULE");
+  awardXP(auth.supabaseId, "RECURRING_RULE").catch(console.error);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   return { success: true, data: { id: rule.id } };
 }
 
@@ -87,7 +87,7 @@ export async function updateRecurringRule(
     data: { ...result.data, nextDueDate },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }
 
@@ -106,7 +106,7 @@ export async function togglePausedRule(id: string): Promise<ActionResult> {
     data: { isPaused: !rule.isPaused },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }
 
@@ -118,6 +118,6 @@ export async function deleteRecurringRule(id: string): Promise<ActionResult> {
     where: { id, userId: auth.supabaseId },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }

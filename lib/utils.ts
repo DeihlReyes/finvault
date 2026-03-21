@@ -5,6 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
+const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
 export function formatCurrency(
   amount: number | string | { toNumber: () => number },
   currency = "USD",
@@ -14,22 +17,36 @@ export function formatCurrency(
     typeof amount === "object" && "toNumber" in amount
       ? amount.toNumber()
       : Number(amount);
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+  const key = `${locale}-${currency}`;
+  if (!currencyFormatterCache.has(key)) {
+    currencyFormatterCache.set(
+      key,
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    );
+  }
+  return currencyFormatterCache.get(key)!.format(value);
 }
 
 export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    ...options,
-  }).format(d);
+  const key = JSON.stringify(options ?? "default");
+  if (!dateFormatterCache.has(key)) {
+    dateFormatterCache.set(
+      key,
+      new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        ...options,
+      })
+    );
+  }
+  return dateFormatterCache.get(key)!.format(d);
 }
 
 export function formatRelativeDate(date: Date | string): string {

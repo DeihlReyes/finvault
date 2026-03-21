@@ -6,11 +6,22 @@ import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import dynamic from "next/dynamic";
 import { ReportsControls } from "@/components/reports/reports-controls";
 import { ExportButtons } from "@/components/reports/export-buttons";
-import { ExpenseDonutChart } from "@/components/reports/expense-donut-chart";
-import { IncomeExpenseBarChart } from "@/components/reports/income-expense-bar-chart";
-import { NetWorthLineChart } from "@/components/reports/net-worth-line-chart";
+
+const ExpenseDonutChart = dynamic(
+  () => import("@/components/reports/expense-donut-chart").then((m) => m.ExpenseDonutChart),
+  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> },
+);
+const IncomeExpenseBarChart = dynamic(
+  () => import("@/components/reports/income-expense-bar-chart").then((m) => m.IncomeExpenseBarChart),
+  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> },
+);
+const NetWorthLineChart = dynamic(
+  () => import("@/components/reports/net-worth-line-chart").then((m) => m.NetWorthLineChart),
+  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> },
+);
 
 export const metadata = { title: "Reports — FinVault" };
 
@@ -220,27 +231,30 @@ async function TrendsContent({
     });
   }
 
-  const data = await Promise.all(
-    months.map(async ({ year, month, label }) => {
-      const from = new Date(year, month - 1, 1);
-      const to = new Date(year, month, 1);
-      const [inc, exp] = await Promise.all([
-        db.transaction.aggregate({
-          where: { userId, type: "INCOME", date: { gte: from, lt: to } },
-          _sum: { amount: true },
-        }),
-        db.transaction.aggregate({
-          where: { userId, type: "EXPENSE", date: { gte: from, lt: to } },
-          _sum: { amount: true },
-        }),
-      ]);
-      return {
-        label,
-        income: Number(inc._sum.amount ?? 0),
-        expenses: Number(exp._sum.amount ?? 0),
-      };
+  // 2 queries for the full 6-month range instead of 12 per-month queries
+  const rangeFrom = new Date(months[0].year, months[0].month - 1, 1);
+  const rangeTo = new Date(currentYear, currentMonth, 1);
+  const [incomeRows, expenseRows] = await Promise.all([
+    db.transaction.findMany({
+      where: { userId, type: "INCOME", date: { gte: rangeFrom, lt: rangeTo } },
+      select: { amount: true, date: true },
     }),
-  );
+    db.transaction.findMany({
+      where: { userId, type: "EXPENSE", date: { gte: rangeFrom, lt: rangeTo } },
+      select: { amount: true, date: true },
+    }),
+  ]);
+  const data = months.map(({ year, month, label }) => {
+    const mStart = new Date(year, month - 1, 1).getTime();
+    const mEnd = new Date(year, month, 1).getTime();
+    const income = incomeRows
+      .filter((r) => r.date.getTime() >= mStart && r.date.getTime() < mEnd)
+      .reduce((sum, r) => sum + Number(r.amount), 0);
+    const expenses = expenseRows
+      .filter((r) => r.date.getTime() >= mStart && r.date.getTime() < mEnd)
+      .reduce((sum, r) => sum + Number(r.amount), 0);
+    return { label, income, expenses };
+  });
 
   return (
     <Card>

@@ -30,34 +30,36 @@ async function BudgetContent() {
     }),
   ]);
 
-  const budgetsWithSpend = await Promise.all(
-    budgets.map(async (budget) => {
-      const agg = await db.transaction.aggregate({
+  const budgetCategoryIds = budgets.map((b) => b.categoryId);
+  const spendRows = budgetCategoryIds.length > 0
+    ? await db.transaction.groupBy({
+        by: ["categoryId"],
         where: {
           userId,
-          categoryId: budget.categoryId,
+          categoryId: { in: budgetCategoryIds },
           type: "EXPENSE",
-          date: {
-            gte: new Date(year, month - 1, 1),
-            lt: new Date(year, month, 1),
-          },
+          date: { gte: new Date(year, month - 1, 1), lt: new Date(year, month, 1) },
         },
         _sum: { amount: true },
-      });
-      const spent = Number(agg._sum.amount ?? 0);
-      const limit = Number(budget.monthlyLimit);
-      const percentage = limit > 0 ? (spent / limit) * 100 : 0;
-      return {
-        id: budget.id,
-        categoryId: budget.categoryId,
-        categoryName: budget.category.name,
-        categoryEmoji: budget.category.emoji,
-        monthlyLimit: limit,
-        spent,
-        percentage,
-      };
-    }),
+      })
+    : [];
+  const spendMap = Object.fromEntries(
+    spendRows.map((r) => [r.categoryId!, Number(r._sum.amount ?? 0)]),
   );
+  const budgetsWithSpend = budgets.map((budget) => {
+    const spent = spendMap[budget.categoryId] ?? 0;
+    const limit = Number(budget.monthlyLimit);
+    const percentage = limit > 0 ? (spent / limit) * 100 : 0;
+    return {
+      id: budget.id,
+      categoryId: budget.categoryId,
+      categoryName: budget.category.name,
+      categoryEmoji: budget.category.emoji,
+      monthlyLimit: limit,
+      spent,
+      percentage,
+    };
+  });
 
   const seenTips = auth.user.seenTips ?? [];
 

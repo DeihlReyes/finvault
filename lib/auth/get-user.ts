@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import type { User } from "@/lib/generated/prisma/client";
@@ -27,7 +28,7 @@ const DEFAULT_CATEGORIES = [
  * it is created here as a fallback so the app never gets stuck.
  * Returns null only when there is no Supabase session at all.
  */
-export async function getUser(): Promise<AuthUser | null> {
+export const getUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createClient();
   const {
     data: { user: supabaseUser },
@@ -70,5 +71,4 @@ export async function getUser(): Promise<AuthUser | null> {
     email: supabaseUser.email ?? user.email,
     user,
   };
-
-}
+});

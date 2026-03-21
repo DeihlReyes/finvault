@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { BudgetForm } from "@/components/budgets/budget-form";
@@ -60,7 +60,7 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
     setDeleteTarget(null);
     if (result.success) {
       toast.success("Budget deleted");
-      router.refresh();
+      startTransition(() => router.refresh());
     } else {
       toast.error(result.error);
     }
@@ -68,7 +68,7 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
 
   function onFormSuccess() {
     setSheetOpen(false);
-    router.refresh();
+    startTransition(() => router.refresh());
   }
 
   const usedCategoryIds = new Set(budgets.map((b) => b.categoryId));

@@ -115,30 +115,35 @@ async function DashboardContent() {
     }),
   ]);
 
-  // Budget health — compute spend per budget then sort by percentage desc
-  const budgetsWithSpend = await Promise.all(
-    rawBudgets.map(async (budget) => {
-      const agg = await db.transaction.aggregate({
+  // Budget health — single groupBy query instead of N aggregate queries
+  const budgetCategoryIds = rawBudgets.map((b) => b.categoryId);
+  const spendRows = budgetCategoryIds.length > 0
+    ? await db.transaction.groupBy({
+        by: ["categoryId"],
         where: {
           userId,
-          categoryId: budget.categoryId,
+          categoryId: { in: budgetCategoryIds },
           type: "EXPENSE",
           date: { gte: monthStart, lt: monthEnd },
         },
         _sum: { amount: true },
-      });
-      const spent = Number(agg._sum.amount ?? 0);
-      const limit = Number(budget.monthlyLimit);
-      return {
-        id: budget.id,
-        categoryName: budget.category.name,
-        categoryEmoji: budget.category.emoji,
-        spent,
-        monthlyLimit: limit,
-        percentage: limit > 0 ? (spent / limit) * 100 : 0,
-      };
-    }),
+      })
+    : [];
+  const spendMap = Object.fromEntries(
+    spendRows.map((r) => [r.categoryId!, Number(r._sum.amount ?? 0)]),
   );
+  const budgetsWithSpend = rawBudgets.map((budget) => {
+    const spent = spendMap[budget.categoryId] ?? 0;
+    const limit = Number(budget.monthlyLimit);
+    return {
+      id: budget.id,
+      categoryName: budget.category.name,
+      categoryEmoji: budget.category.emoji,
+      spent,
+      monthlyLimit: limit,
+      percentage: limit > 0 ? (spent / limit) * 100 : 0,
+    };
+  });
   budgetsWithSpend.sort((a, b) => b.percentage - a.percentage);
   const top3Budgets = budgetsWithSpend.slice(0, 3);
 

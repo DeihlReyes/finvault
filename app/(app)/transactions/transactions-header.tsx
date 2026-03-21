@@ -69,8 +69,7 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  function handleOpenSheet() {
-    setSheetOpen(true);
+  function prefetchFormData() {
     if (!formData) {
       startLoading(async () => {
         const data = await getTransactionFormData();
@@ -79,12 +78,22 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
     }
   }
 
+  function handleOpenSheet() {
+    setSheetOpen(true);
+    prefetchFormData();
+  }
+
   return (
     <>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Transactions</h2>
-          <Button className="hidden md:flex" onClick={handleOpenSheet}>
+          <Button
+            className="hidden md:flex"
+            onClick={handleOpenSheet}
+            onMouseEnter={prefetchFormData}
+            onFocus={prefetchFormData}
+          >
             <HugeiconsIcon icon={Add} /> Add Transaction
           </Button>
         </div>

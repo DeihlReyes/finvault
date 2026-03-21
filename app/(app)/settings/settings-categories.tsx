@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CategoryForm } from "@/components/categories/category-form";
 import { archiveCategory } from "@/actions/categories";
@@ -53,7 +53,7 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
     setArchiveTarget(null);
     if (result.success) {
       toast.success("Category archived");
-      router.refresh();
+      startTransition(() => router.refresh());
     } else {
       toast.error(result.error);
     }
@@ -61,7 +61,7 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
 
   function onFormSuccess() {
     setSheetMode(null);
-    router.refresh();
+    startTransition(() => router.refresh());
   }
 
   const editTarget = sheetMode && sheetMode !== "add" ? sheetMode.edit : null;

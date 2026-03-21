@@ -87,12 +87,13 @@ export async function createTransaction(
   const txMonth = txDate.getMonth() + 1;
   const txYear = txDate.getFullYear();
 
-  await Promise.all([
+  // Fire-and-forget — don't block the response on gamification writes
+  Promise.all([
     awardXP(userId, "TRANSACTION"),
     evaluateStreak(userId),
     incrementChallengeProgress(userId, txMonth, txYear),
-  ]);
-  await checkAndAwardAchievement(userId, "FIRST_TRANSACTION");
+  ]).then(() => checkAndAwardAchievement(userId, "FIRST_TRANSACTION"))
+    .catch(console.error);
 
   // Budget threshold check
   const budgetAlerts: BudgetAlert[] = [];
@@ -137,7 +138,9 @@ export async function createTransaction(
     }
   }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+  revalidatePath("/budgets");
 
   return { success: true, data: { id: transaction.id, budgetAlerts } };
 }
@@ -214,7 +217,9 @@ export async function updateTransaction(
     });
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+  revalidatePath("/budgets");
   return { success: true, data: undefined };
 }
 
@@ -253,7 +258,9 @@ export async function deleteTransaction(id: string): Promise<ActionResult> {
     }
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+  revalidatePath("/budgets");
   return { success: true, data: undefined };
 }
 
@@ -293,7 +300,9 @@ export async function bulkDeleteTransactions(ids: string[]): Promise<ActionResul
     }
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+  revalidatePath("/budgets");
   return { success: true, data: undefined };
 }
 

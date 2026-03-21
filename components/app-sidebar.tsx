@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Sidebar,
@@ -12,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarGroup,
   SidebarGroupContent,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 
@@ -32,6 +34,7 @@ export function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: User }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   return (
     <Sidebar className="p-4" variant="inset" {...props}>
@@ -39,8 +42,7 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton render={<Link href="/dashboard" />}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/icon.png"
                 alt="FinVault"
                 width={32}
@@ -71,7 +73,13 @@ export function AppSidebar({
                     <SidebarMenuButton
                       tooltip={item.label}
                       isActive={isActive}
-                      render={<Link href={item.href} />}
+                      render={
+                        <Link
+                          href={item.href}
+                          className="py-6"
+                          onClick={() => setOpenMobile(false)}
+                        />
+                      }
                     >
                       <span className="leading-none">{item.icon}</span>
                       <span className="text-sm">{item.label}</span>

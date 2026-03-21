@@ -39,10 +39,14 @@ export async function createBudget(
     data: { userId: auth.supabaseId, ...result.data },
   });
 
-  await awardXP(auth.supabaseId, "BUDGET_SETUP");
-  await checkAndAwardAchievement(auth.supabaseId, "BUDGET_BUILDER");
+  // Fire-and-forget gamification
+  Promise.all([
+    awardXP(auth.supabaseId, "BUDGET_SETUP"),
+    checkAndAwardAchievement(auth.supabaseId, "BUDGET_BUILDER"),
+  ]).catch(console.error);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/budgets");
+  revalidatePath("/dashboard");
   return { success: true, data: { id: budget.id } };
 }
 
@@ -81,7 +85,8 @@ export async function updateBudget(
     },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/budgets");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }
 
@@ -93,6 +98,7 @@ export async function deleteBudget(id: string): Promise<ActionResult> {
     where: { id, userId: auth.supabaseId },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/budgets");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }

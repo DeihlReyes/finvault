@@ -37,7 +37,8 @@ export async function updateProfile(
     data: result.data,
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  revalidatePath("/dashboard");
   return { success: true, data: undefined };
 }
 
@@ -57,7 +58,7 @@ export async function completeOnboarding(data: {
     },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 

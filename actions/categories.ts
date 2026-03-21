@@ -31,7 +31,8 @@ export async function createCategory(
     data: { userId: auth.supabaseId, ...result.data },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  revalidatePath("/transactions");
   return { success: true, data: { id: category.id } };
 }
 
@@ -62,7 +63,8 @@ export async function updateCategory(
     data: result.data,
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  revalidatePath("/transactions");
   return { success: true, data: { id } };
 }
 
@@ -86,6 +88,7 @@ export async function archiveCategory(id: string): Promise<ActionResult> {
     data: { isArchived: true },
   });
 
-  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  revalidatePath("/transactions");
   return { success: true, data: undefined };
 }

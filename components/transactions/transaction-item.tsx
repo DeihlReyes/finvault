@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -42,6 +42,9 @@ export function TransactionItem({
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
+  if (deleted) return null;
 
   const {
     elementRef: ref,
@@ -53,13 +56,15 @@ export function TransactionItem({
 
   async function handleDelete() {
     setDeleting(true);
-    const result = await deleteTransaction(id);
-    setDeleting(false);
     setConfirmOpen(false);
+    setDeleted(true); // optimistic — hide immediately
+    const result = await deleteTransaction(id);
     if (result.success) {
       toast.success("Transaction deleted");
-      router.refresh();
+      startTransition(() => router.refresh());
     } else {
+      setDeleted(false); // roll back
+      setDeleting(false);
       resetPosition();
       toast.error("Failed to delete");
     }

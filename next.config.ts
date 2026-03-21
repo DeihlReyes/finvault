@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  compress: true,
   cacheComponents: true,
   experimental: {
     authInterrupts: true,
