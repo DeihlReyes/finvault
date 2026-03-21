@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\(''''version'''',''''?''''\\)\\)\")",
+      "Bash(node:*)",
+      "Bash(tree -L 3 /c/Users/DEIHL/Desktop/finvault --exclude node_modules)",
+      "Bash(find /c/Users/DEIHL/Desktop/finvault -not -path */node_modules/* -type f)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep -l export C:/Users/DEIHL/Desktop/finvault/lib/generated/prisma/*.ts)",
+      "Bash(node -e \"const d=require\\(''''/dev/stdin''''\\); console.log\\(''''deps:'''', JSON.stringify\\(d.dependencies || {}, null, 2\\), ''''peerDeps:'''', JSON.stringify\\(d.peerDependencies || {}, null, 2\\)\\)\")",
+      "Bash(node -e \"const fs=require\\(''''fs''''\\); const p=JSON.parse\\(fs.readFileSync\\(''''node_modules/@prisma/adapter-pg/package.json'''',''''utf8''''\\)\\); console.log\\(''''deps:'''', p.dependencies, ''''peers:'''', p.peerDependencies\\)\")",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__get_publishable_keys",
+      "mcp__supabase__get_project_url",
+      "Bash(xargs grep:*)",
+      "Bash(find node_modules/@prisma/config -name *.d.ts)",
+      "Bash(xargs cat:*)",
+      "mcp__prisma-local__migrate-dev",
+      "Bash(npx skills:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":5432\")",
+      "Bash(tasklist /fi \"PID eq 6832\" /fo list)",
+      "Bash(tasklist /fi \"PID eq 18500\" /fo list)",
+      "Bash(powershell -Command \"Get-Process -Id 6832,18500 | Select-Object Id,ProcessName,Path\")",
+      "Bash(powershell -Command \"Get-Process -Id 6832 | Select-Object Path\")",
+      "Bash(powershell -Command \"Get-Process -Id 10104 | Select-Object Id,ProcessName,Path\")",
+      "Bash(powershell -Command \"1..10 | ForEach-Object { \\\\$port = 5430 + \\\\$_; \\\\$used = netstat -ano | Select-String \\\\\":\\\\$port \\\\\"; if \\(-not \\\\$used\\) { Write-Host \\\\\"FREE: \\\\$port\\\\\" } else { Write-Host \\\\\"USED: \\\\$port\\\\\" } }\")",
+      "Bash(grep -A5 '\"\"prisma\"\"' package.json)"
+    ]
+  }
+}
