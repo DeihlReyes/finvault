@@ -16,6 +16,16 @@ import {
   CredenzaTitle,
   CredenzaBody,
 } from "@/components/ui/credenza";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 type Wallet = {
   id: string;
@@ -37,10 +47,15 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editWallet, setEditWallet] = useState<Wallet | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Wallet | null>(null);
+  const [archiving, setArchiving] = useState(false);
 
-  async function handleArchive(id: string, name: string) {
-    if (!confirm(`Archive "${name}"?`)) return;
-    const result = await archiveWallet(id);
+  async function handleArchive() {
+    if (!archiveTarget) return;
+    setArchiving(true);
+    const result = await archiveWallet(archiveTarget.id);
+    setArchiving(false);
+    setArchiveTarget(null);
     if (result.success) {
       toast.success("Wallet archived");
       router.refresh();
@@ -110,7 +125,7 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-xs hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleArchive(wallet.id, wallet.name)}
+                      onClick={() => setArchiveTarget(wallet)}
                     >
                       🗑
                     </Button>
@@ -131,6 +146,27 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
           </button>
         </div>
       </div>
+
+      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive &ldquo;{archiveTarget?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The wallet will be hidden from your dashboard. Transactions are preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={archiving}
+              onClick={handleArchive}
+            >
+              {archiving ? "Archiving…" : "Archive"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Credenza open={sheetOpen} onOpenChange={setSheetOpen}>
         <CredenzaContent>

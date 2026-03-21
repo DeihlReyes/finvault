@@ -37,7 +37,7 @@ export async function updateProfile(
     data: result.data,
   });
 
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }
 

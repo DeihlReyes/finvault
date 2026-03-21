@@ -15,6 +15,16 @@ import {
   CredenzaTitle,
   CredenzaBody,
 } from "@/components/ui/credenza";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 type Budget = {
   id: string;
@@ -37,10 +47,15 @@ type Props = {
 export function BudgetsClient({ budgets, categories, currency }: Props) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Budget | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete the ${name} budget?`)) return;
-    const result = await deleteBudget(id);
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const result = await deleteBudget(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     if (result.success) {
       toast.success("Budget deleted");
       router.refresh();
@@ -99,7 +114,7 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(budget.id, budget.categoryName)}
+                          onClick={() => setDeleteTarget(budget)}
                         >
                           ✕
                         </Button>
@@ -121,6 +136,27 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete budget?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The {deleteTarget?.categoryEmoji} {deleteTarget?.categoryName} budget will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={handleDelete}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Credenza open={sheetOpen} onOpenChange={setSheetOpen}>
         <CredenzaContent>

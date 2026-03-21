@@ -46,8 +46,7 @@ export async function createWallet(
     await checkAndAwardAchievement(userId, "WALLET_WIZARD");
   }
 
-  revalidatePath("/wallets");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return { success: true, data: { id: wallet.id } };
 }
 
@@ -82,7 +81,7 @@ export async function updateWallet(
     data: result.data,
   });
 
-  revalidatePath("/wallets");
+  revalidatePath("/", "layout");
   return { success: true, data: { id } };
 }
 
@@ -95,6 +94,6 @@ export async function archiveWallet(id: string): Promise<ActionResult> {
     data: { isArchived: true },
   });
 
-  revalidatePath("/wallets");
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }

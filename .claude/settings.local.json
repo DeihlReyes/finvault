@@ -43,7 +43,8 @@
       "Bash(npx shadcn:*)",
       "Bash(ls \"C:/Users/DEIHL/Desktop/finvault/app/\\(app\\)/achievements/\")",
       "Bash(node -e \"require\\(''''./node_modules/framer-motion/dist/cjs/index.js''''\\)\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

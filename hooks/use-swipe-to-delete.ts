@@ -33,5 +33,11 @@ export function useSwipeToDelete(onDelete: () => void) {
     currentX.current = 0;
   }, [onDelete]);
 
-  return { elementRef, handleTouchStart, handleTouchMove, handleTouchEnd };
+  const resetPosition = useCallback(() => {
+    if (elementRef.current) {
+      elementRef.current.style.transform = "translateX(0)";
+    }
+  }, []);
+
+  return { elementRef, handleTouchStart, handleTouchMove, handleTouchEnd, resetPosition };
 }

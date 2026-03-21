@@ -1,12 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSwipeToDelete } from "@/hooks/use-swipe-to-delete";
 import { deleteTransaction } from "@/actions/transactions";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   id: string;
@@ -30,66 +40,120 @@ export function TransactionItem({
   currency,
 }: Props) {
   const router = useRouter();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const { elementRef: ref, handleTouchStart, handleTouchMove, handleTouchEnd, resetPosition } =
+    useSwipeToDelete(() => setConfirmOpen(true));
 
   async function handleDelete() {
+    setDeleting(true);
     const result = await deleteTransaction(id);
+    setDeleting(false);
+    setConfirmOpen(false);
     if (result.success) {
       toast.success("Transaction deleted");
       router.refresh();
     } else {
-      // Reset the swipe position
-      if (ref.current) ref.current.style.transform = "translateX(0)";
+      resetPosition();
       toast.error("Failed to delete");
     }
   }
 
-  const { elementRef: ref, handleTouchStart, handleTouchMove, handleTouchEnd } =
-    useSwipeToDelete(handleDelete);
+  const isIncome = type === "INCOME";
+  const isTransfer = type === "TRANSFER";
 
-  const amountColor =
-    type === "INCOME"
-      ? "text-[oklch(0.65_0.15_145)]"
-      : type === "EXPENSE"
-      ? "text-destructive"
-      : "text-muted-foreground";
+  const amountColor = isIncome
+    ? "text-emerald-400"
+    : isTransfer
+    ? "text-muted-foreground"
+    : "text-red-400";
+
+  const amountPrefix = isIncome ? "+" : isTransfer ? "" : "-";
+
+  const iconBg = isIncome
+    ? "bg-emerald-500/10 text-emerald-400"
+    : isTransfer
+    ? "bg-blue-500/10 text-blue-400"
+    : "bg-secondary";
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
-      {/* Delete hint behind the card */}
-      <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-4 bg-destructive rounded-xl w-full">
-        <span className="text-destructive-foreground text-sm font-medium">Delete</span>
+    <>
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={deleting}
+            onClick={handleDelete}
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Swipe-to-delete background */}
+      <div className="absolute inset-0 bg-red-500/90 flex items-center justify-end pr-5 rounded-2xl">
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-lg">🗑️</span>
+          <span className="text-white text-[10px] font-semibold uppercase tracking-wider">
+            Delete
+          </span>
+        </div>
       </div>
 
+      {/* Card */}
       <div
         ref={ref}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative"
         style={{ willChange: "transform" }}
       >
         <Link href={`/transactions/${id}`} className="block">
-          <Card className="p-4 flex items-center justify-between hover:border-primary/50 transition-colors cursor-pointer">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-lg shrink-0">
-                {category?.emoji ?? "💳"}
-              </div>
-              <div>
-                <p className="text-sm font-medium leading-tight">
-                  {note ?? category?.name ?? "Transaction"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {walletName} · {formatDate(date)}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-card/80 transition-all">
+            {/* Emoji icon */}
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${iconBg}`}
+            >
+              {category?.emoji ?? (isTransfer ? "↔️" : "💳")}
             </div>
-            <span className={`text-sm font-semibold shrink-0 ml-3 ${amountColor}`}>
-              {type === "INCOME" ? "+" : type === "EXPENSE" ? "-" : ""}
-              {formatCurrency(amount, currency)}
-            </span>
-          </Card>
+
+            {/* Label + meta */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold leading-tight truncate">
+                {note ?? category?.name ?? "Transaction"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                {walletName} · {formatDate(date)}
+              </p>
+            </div>
+
+            {/* Amount */}
+            <div className="text-right shrink-0 ml-2">
+              <span className={`text-sm font-bold tabular-nums ${amountColor}`}>
+                {amountPrefix}
+                {formatCurrency(amount, currency)}
+              </span>
+              {!isTransfer && (
+                <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide">
+                  {type}
+                </p>
+              )}
+            </div>
+          </div>
         </Link>
       </div>
     </div>
+    </>
   );
 }

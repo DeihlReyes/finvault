@@ -1,14 +1,26 @@
 "use client";
+"use no memo";
 
-import { useActionState, useEffect, useRef } from "react";
-import { createCategory, updateCategory } from "@/actions/categories";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import type { ActionResult } from "@/types/api";
+import { categorySchema } from "@/lib/validators/category";
+import type { Resolver } from "react-hook-form";
+import { z } from "zod";
+type CategoryInput = z.output<typeof categorySchema>;
+import { createCategory, updateCategory } from "@/actions/categories";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
-type CatResult = ActionResult<{ id: string }>;
+import { cn } from "@/lib/utils";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 
 type Props = {
   onSuccess?: () => void;
@@ -22,99 +34,155 @@ const PALETTE = [
   "#8B5CF6", "#6B7280",
 ];
 
-const EMOJI_SUGGESTIONS = ["🍔", "🚌", "🏠", "🎮", "❤️", "🛍️", "💰", "💼", "💻", "📦", "✈️", "🎓", "🐾", "🎵"];
+const EMOJI_SUGGESTIONS = [
+  "🍔", "🚌", "🏠", "🎮", "❤️", "🛍️",
+  "💰", "💼", "💻", "📦", "✈️", "🎓",
+  "🐾", "🎵",
+];
 
 export function CategoryForm({ onSuccess, editId, initialValues }: Props) {
-  const prevState = useRef<CatResult | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  const action = editId
-    ? updateCategory.bind(null, editId)
-    : createCategory;
+  const form = useForm<CategoryInput>({
+    resolver: zodResolver(categorySchema) as Resolver<CategoryInput>,
+    defaultValues: {
+      name: initialValues?.name ?? "",
+      emoji: initialValues?.emoji ?? "💰",
+      color: initialValues?.color ?? "#6C47FF",
+    },
+  });
 
-  const [state, formAction, pending] = useActionState<CatResult | null, FormData>(
-    action,
-    null
-  );
+  const selectedColor = form.watch("color");
+  const selectedEmoji = form.watch("emoji");
+  const nameValue = form.watch("name");
 
-  useEffect(() => {
-    if (state && state !== prevState.current) {
-      prevState.current = state;
-      if (state.success) {
-        toast.success(editId ? "Category updated!" : "Category created!");
-        onSuccess?.();
-      } else if (state.error) {
-        toast.error(state.error);
-      }
+  async function onSubmit(data: CategoryInput) {
+    setServerError(null);
+    const fd = new FormData();
+    fd.append("name", data.name);
+    fd.append("emoji", data.emoji);
+    fd.append("color", data.color);
+
+    const result = editId
+      ? await updateCategory(editId, null, fd)
+      : await createCategory(null, fd);
+
+    if (result.success) {
+      toast.success(editId ? "Category updated!" : "Category created!");
+      onSuccess?.();
+    } else {
+      setServerError(result.error ?? "Something went wrong. Please try again.");
     }
-  }, [state, editId, onSuccess]);
+  }
 
   return (
-    <form action={formAction} className="space-y-4">
-      {/* Emoji */}
-      <div className="space-y-2">
-        <Label>Emoji</Label>
-        <div className="flex flex-wrap gap-2">
-          {EMOJI_SUGGESTIONS.map((e) => (
-            <label key={e} className="cursor-pointer">
-              <input
-                type="radio"
-                name="emoji"
-                value={e}
-                defaultChecked={e === (initialValues?.emoji ?? "💰")}
-                className="sr-only"
-              />
-              <span className="block w-9 h-9 flex items-center justify-center rounded-lg border border-border hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-lg transition-colors">
-                {e}
-              </span>
-            </label>
-          ))}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {/* Preview */}
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+            style={{ backgroundColor: selectedColor + "20" }}
+          >
+            {selectedEmoji}
+          </div>
+          <div>
+            <p className="text-sm font-medium">{nameValue || "Category name"}</p>
+            <p className="text-xs text-muted-foreground">Preview</p>
+          </div>
         </div>
-      </div>
 
-      {/* Name */}
-      <div className="space-y-1.5">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
+        {/* Name */}
+        <FormField
+          control={form.control}
           name="name"
-          type="text"
-          required
-          maxLength={30}
-          defaultValue={initialValues?.name}
-          placeholder="e.g. Groceries"
-          className="h-9 w-full"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder="e.g. Groceries"
+                  className="h-9 w-full"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      {/* Color */}
-      <div className="space-y-2">
-        <Label>Color</Label>
-        <div className="flex gap-2 flex-wrap">
-          {PALETTE.map((color) => (
-            <label key={color} className="cursor-pointer">
-              <input
-                type="radio"
-                name="color"
-                value={color}
-                defaultChecked={color === (initialValues?.color ?? "#6C47FF")}
-                className="sr-only"
-              />
-              <span
-                className="block w-7 h-7 rounded-full ring-2 ring-offset-2 ring-offset-background ring-transparent has-[:checked]:ring-white transition-all"
-                style={{ backgroundColor: color }}
-              />
-            </label>
-          ))}
-        </div>
-      </div>
+        {/* Emoji */}
+        <FormField
+          control={form.control}
+          name="emoji"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Emoji</FormLabel>
+              <FormControl>
+                <div className="flex flex-wrap gap-2">
+                  {EMOJI_SUGGESTIONS.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => field.onChange(e)}
+                      className={cn(
+                        "w-9 h-9 flex items-center justify-center rounded-lg border text-lg transition-all",
+                        field.value === e
+                          ? "border-primary bg-primary/10 scale-110"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      {state && !state.success && state.error && (
-        <p className="text-destructive text-sm">{state.error}</p>
-      )}
+        {/* Color */}
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Color</FormLabel>
+              <FormControl>
+                <div className="flex gap-2 flex-wrap">
+                  {PALETTE.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => field.onChange(color)}
+                      className="w-7 h-7 rounded-full transition-all"
+                      style={{
+                        backgroundColor: color,
+                        outline: selectedColor === color ? "2px solid white" : "2px solid transparent",
+                        outlineOffset: "2px",
+                      }}
+                      aria-label={color}
+                    />
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <Button type="submit" disabled={pending} className="w-full h-10">
-        {pending ? "Saving…" : editId ? "Update" : "Create Category"}
-      </Button>
-    </form>
+        {serverError && (
+          <div className="text-destructive text-sm bg-destructive/10 px-3 py-2 rounded-lg">
+            {serverError}
+          </div>
+        )}
+
+        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full h-10">
+          {form.formState.isSubmitting ? "Saving…" : editId ? "Update Category" : "Create Category"}
+        </Button>
+      </form>
+    </Form>
   );
 }

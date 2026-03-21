@@ -39,7 +39,7 @@ export async function createBudget(
   await awardXP(auth.supabaseId, "BUDGET_SETUP");
   await checkAndAwardAchievement(auth.supabaseId, "BUDGET_BUILDER");
 
-  revalidatePath("/budgets");
+  revalidatePath("/", "layout");
   return { success: true, data: { id: budget.id } };
 }
 
@@ -72,7 +72,7 @@ export async function updateBudget(
     data: { monthlyLimit: result.data.monthlyLimit, rolloverEnabled: result.data.rolloverEnabled },
   });
 
-  revalidatePath("/budgets");
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }
 
@@ -84,6 +84,6 @@ export async function deleteBudget(id: string): Promise<ActionResult> {
     where: { id, userId: auth.supabaseId },
   });
 
-  revalidatePath("/budgets");
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }

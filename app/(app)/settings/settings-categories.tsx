@@ -15,6 +15,16 @@ import {
   CredenzaTitle,
   CredenzaBody,
 } from "@/components/ui/credenza";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 type Category = {
   id: string;
@@ -27,10 +37,15 @@ type Category = {
 export function SettingsCategories({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [sheetMode, setSheetMode] = useState<null | "add" | { edit: Category }>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Category | null>(null);
+  const [archiving, setArchiving] = useState(false);
 
-  async function handleArchive(cat: Category) {
-    if (!confirm(`Archive "${cat.name}"? This cannot be undone if transactions exist.`)) return;
-    const result = await archiveCategory(cat.id);
+  async function handleArchive() {
+    if (!archiveTarget) return;
+    setArchiving(true);
+    const result = await archiveCategory(archiveTarget.id);
+    setArchiving(false);
+    setArchiveTarget(null);
     if (result.success) {
       toast.success("Category archived");
       router.refresh();
@@ -87,7 +102,7 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-xs hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleArchive(cat)}
+                    onClick={() => setArchiveTarget(cat)}
                   >
                     🗑
                   </Button>
@@ -97,6 +112,27 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive &ldquo;{archiveTarget?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The category will be hidden. Existing transactions are preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={archiving}
+              onClick={handleArchive}
+            >
+              {archiving ? "Archiving…" : "Archive"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Credenza open={sheetMode !== null} onOpenChange={(open) => !open && setSheetMode(null)}>
         <CredenzaContent>

@@ -19,6 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 type UpdateResult = ActionResult<void>;
 
@@ -47,6 +57,8 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState(tx.type);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const prevState = useRef<UpdateResult | null>(null);
 
   const boundUpdate = updateTransaction.bind(null, tx.id);
@@ -69,8 +81,10 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
   }, [state, router]);
 
   async function handleDelete() {
-    if (!confirm("Delete this transaction?")) return;
+    setDeleting(true);
     const result = await deleteTransaction(tx.id);
+    setDeleting(false);
+    setConfirmDelete(false);
     if (result.success) {
       toast.success("Transaction deleted");
       router.push("/transactions");
@@ -81,6 +95,28 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
 
   if (!editing) {
     return (
+      <>
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={handleDelete}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => router.back()}>
@@ -88,7 +124,7 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
-            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={handleDelete}>
+            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setConfirmDelete(true)}>
               Delete
             </Button>
           </div>
@@ -131,6 +167,7 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
           </CardContent>
         </Card>
       </div>
+      </>
     );
   }
 

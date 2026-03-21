@@ -76,7 +76,7 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <Select value={String(current.month)} onValueChange={(v) => v && setParam("month", v)}>
             <SelectTrigger className="h-8 text-xs w-auto shrink-0">
-              <SelectValue />
+              <SelectValue>{MONTHS[current.month - 1]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {MONTHS.map((m, i) => (
@@ -87,7 +87,7 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
 
           <Select value={String(current.year)} onValueChange={(v) => v && setParam("year", v)}>
             <SelectTrigger className="h-8 text-xs w-auto shrink-0">
-              <SelectValue />
+              <SelectValue>{current.year}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {[2024, 2025, 2026, 2027].map((y) => (
@@ -98,7 +98,11 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
 
           <Select value={current.type ?? ""} onValueChange={(v) => setParam("type", v || undefined)}>
             <SelectTrigger className="h-8 text-xs w-auto shrink-0">
-              <SelectValue placeholder="All types" />
+              <SelectValue>
+                {current.type
+                  ? current.type.charAt(0) + current.type.slice(1).toLowerCase()
+                  : "All types"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All types</SelectItem>
@@ -111,7 +115,9 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
           {wallets.length > 1 && (
             <Select value={current.wallet ?? ""} onValueChange={(v) => setParam("wallet", v || undefined)}>
               <SelectTrigger className="h-8 text-xs w-auto shrink-0">
-                <SelectValue placeholder="All wallets" />
+                <SelectValue>
+                  {wallets.find((w) => w.id === current.wallet)?.name ?? "All wallets"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All wallets</SelectItem>
@@ -125,7 +131,12 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
           {categories.length > 0 && (
             <Select value={current.category ?? ""} onValueChange={(v) => setParam("category", v || undefined)}>
               <SelectTrigger className="h-8 text-xs w-auto shrink-0">
-                <SelectValue placeholder="All categories" />
+                <SelectValue>
+                  {(() => {
+                    const c = categories.find((c) => c.id === current.category);
+                    return c ? `${c.emoji} ${c.name}` : "All categories";
+                  })()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All categories</SelectItem>

@@ -137,9 +137,7 @@ export async function createTransaction(
     }
   }
 
-  revalidatePath("/transactions");
-  revalidatePath("/dashboard");
-  revalidatePath("/budgets");
+  revalidatePath("/", "layout");
 
   return { success: true, data: { id: transaction.id, budgetAlerts } };
 }
@@ -184,8 +182,7 @@ export async function updateTransaction(
     },
   });
 
-  revalidatePath("/transactions");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }
 
@@ -193,12 +190,38 @@ export async function deleteTransaction(id: string): Promise<ActionResult> {
   const auth = await getUser();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  await db.transaction.deleteMany({
+  const tx = await db.transaction.findFirst({
     where: { id, userId: auth.supabaseId },
+    select: { type: true, amount: true, walletId: true, destinationWalletId: true },
+  });
+  if (!tx) return { success: false, error: "Transaction not found" };
+
+  await db.$transaction(async (prisma) => {
+    await prisma.transaction.delete({ where: { id } });
+
+    if (tx.type === "INCOME") {
+      await prisma.wallet.update({
+        where: { id: tx.walletId },
+        data: { balance: { decrement: tx.amount } },
+      });
+    } else if (tx.type === "EXPENSE") {
+      await prisma.wallet.update({
+        where: { id: tx.walletId },
+        data: { balance: { increment: tx.amount } },
+      });
+    } else if (tx.type === "TRANSFER" && tx.destinationWalletId) {
+      await prisma.wallet.update({
+        where: { id: tx.walletId },
+        data: { balance: { increment: tx.amount } },
+      });
+      await prisma.wallet.update({
+        where: { id: tx.destinationWalletId },
+        data: { balance: { decrement: tx.amount } },
+      });
+    }
   });
 
-  revalidatePath("/transactions");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }
 
@@ -206,12 +229,39 @@ export async function bulkDeleteTransactions(ids: string[]): Promise<ActionResul
   const auth = await getUser();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  await db.transaction.deleteMany({
+  const txs = await db.transaction.findMany({
     where: { id: { in: ids }, userId: auth.supabaseId },
+    select: { id: true, type: true, amount: true, walletId: true, destinationWalletId: true },
   });
 
-  revalidatePath("/transactions");
-  revalidatePath("/dashboard");
+  await db.$transaction(async (prisma) => {
+    await prisma.transaction.deleteMany({ where: { id: { in: ids } } });
+
+    for (const tx of txs) {
+      if (tx.type === "INCOME") {
+        await prisma.wallet.update({
+          where: { id: tx.walletId },
+          data: { balance: { decrement: tx.amount } },
+        });
+      } else if (tx.type === "EXPENSE") {
+        await prisma.wallet.update({
+          where: { id: tx.walletId },
+          data: { balance: { increment: tx.amount } },
+        });
+      } else if (tx.type === "TRANSFER" && tx.destinationWalletId) {
+        await prisma.wallet.update({
+          where: { id: tx.walletId },
+          data: { balance: { increment: tx.amount } },
+        });
+        await prisma.wallet.update({
+          where: { id: tx.destinationWalletId },
+          data: { balance: { decrement: tx.amount } },
+        });
+      }
+    }
+  });
+
+  revalidatePath("/", "layout");
   return { success: true, data: undefined };
 }
 
