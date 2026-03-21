@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { WalletsClient } from "./wallets-client";
+import { FeatureTip } from "@/components/onboarding/feature-tip";
+import { TIPS } from "@/lib/onboarding/tips";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata = { title: "Wallets — FinVault" };
@@ -27,16 +29,28 @@ async function WalletContent() {
 
   const totalBalance = wallets.reduce((sum, w) => sum + Number(w.balance), 0);
 
+  const seenTips = auth.user.seenTips ?? [];
+
   return (
-    <WalletsClient
-      wallets={wallets.map((w) => ({
-        ...w,
-        balance: Number(w.balance),
-        typeLabel: WALLET_TYPE_LABELS[w.type] ?? w.type,
-      }))}
-      totalBalance={totalBalance}
-      currency={auth.user.currency}
-    />
+    <>
+      {wallets.length === 1 && (
+        <FeatureTip
+          tipId={TIPS.WALLETS_ADD_SECOND}
+          title="Add more wallets"
+          description="Track cash, savings, and credit cards separately for a complete picture of your finances."
+          seenTips={seenTips}
+        />
+      )}
+      <WalletsClient
+        wallets={wallets.map((w) => ({
+          ...w,
+          balance: Number(w.balance),
+          typeLabel: WALLET_TYPE_LABELS[w.type] ?? w.type,
+        }))}
+        totalBalance={totalBalance}
+        currency={auth.user.currency}
+      />
+    </>
   );
 }
 

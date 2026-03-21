@@ -20,9 +20,9 @@ export function AppShell({
   user: User;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="p-2">
       <AppSidebar user={user} />
-      <SidebarInset className="bg-background/20">
+      <SidebarInset className="bg-secondary/5 rounded-lg">
         <header className="flex  items-center gap-2 h-12 px-4 border-b border-border shrink-0">
           <SidebarTrigger />
           <DirectoryBreadcrumb />

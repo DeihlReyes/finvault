@@ -46,7 +46,9 @@
       "Bash(git add:*)",
       "Bash(npx tsx:*)",
       "Bash(npx shadcn@latest add sidebar-08 --yes)",
-      "Bash(node -e \"require\\(''''sharp''''\\)\")"
+      "Bash(node -e \"require\\(''''sharp''''\\)\")",
+      "Bash(ls:*)",
+      "Bash(ls \"/c/Users/DEIHL/Desktop/finvault/app/\\(auth\\)\")"
     ]
   }
 }

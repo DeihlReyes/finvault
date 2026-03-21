@@ -34,7 +34,7 @@ export function AppSidebar({
   const pathname = usePathname();
 
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar className="p-4" variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

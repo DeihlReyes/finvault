@@ -6,6 +6,8 @@ import type { AchievementType } from "@/lib/generated/prisma/enums";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureTip } from "@/components/onboarding/feature-tip";
+import { TIPS } from "@/lib/onboarding/tips";
 
 export const metadata = { title: "Achievements — FinVault" };
 
@@ -65,8 +67,16 @@ async function AchievementsContent() {
   const earnedTypes = new Set(earned.map((a) => a.type));
   const total = Object.keys(ACHIEVEMENT_META).length;
 
+  const seenTips = auth.user.seenTips ?? [];
+
   return (
     <div className="space-y-3">
+      <FeatureTip
+        tipId={TIPS.ACHIEVEMENTS_PANEL}
+        title="Unlock achievements"
+        description="Complete actions in FinVault — like logging transactions and building streaks — to earn badges and bonus XP."
+        seenTips={seenTips}
+      />
       <p className="text-sm text-muted-foreground">
         {earned.length} / {total} unlocked
       </p>

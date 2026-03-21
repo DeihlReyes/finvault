@@ -114,7 +114,10 @@ export function BudgetForm({ categories, onSuccess }: Props) {
               <FormLabel>Monthly limit</FormLabel>
               <FormControl>
                 <Input
-                  {...field}
+                  name={field.name}
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  value={field.value == null || (typeof field.value === "number" && isNaN(field.value)) ? "" : field.value}
                   type="number"
                   step="0.01"
                   placeholder="e.g. 500.00"

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { BudgetsClient } from "./budgets-client";
+import { FeatureTip } from "@/components/onboarding/feature-tip";
+import { TIPS } from "@/lib/onboarding/tips";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata = { title: "Budgets — FinVault" };
@@ -57,12 +59,24 @@ async function BudgetContent() {
     }),
   );
 
+  const seenTips = auth.user.seenTips ?? [];
+
   return (
-    <BudgetsClient
-      budgets={budgetsWithSpend}
-      categories={categories}
-      currency={auth.user.currency}
-    />
+    <>
+      {budgets.length === 0 && (
+        <FeatureTip
+          tipId={TIPS.BUDGETS_FIRST}
+          title="Set your first budget"
+          description="Pick a category and set a monthly limit. Earn +50 XP when you create your first budget!"
+          seenTips={seenTips}
+        />
+      )}
+      <BudgetsClient
+        budgets={budgetsWithSpend}
+        categories={categories}
+        currency={auth.user.currency}
+      />
+    </>
   );
 }
 

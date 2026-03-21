@@ -35,25 +35,29 @@ export async function getUser(): Promise<AuthUser | null> {
 
   if (!supabaseUser) return null;
 
-  let user = await db.user.findUnique({
+  const isNew = !(await db.user.findUnique({
     where: { id: supabaseUser.id },
+    select: { id: true },
+  }));
+
+  // Upsert: atomic — safe under concurrent requests on first login
+  const user = await db.user.upsert({
+    where: { id: supabaseUser.id },
+    update: {},
+    create: {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? "",
+      displayName:
+        (supabaseUser.user_metadata?.full_name as string | undefined) ??
+        (supabaseUser.user_metadata?.name as string | undefined) ??
+        null,
+    },
   });
 
-  // Fallback: create the user row if the auth webhook never fired (local dev / first deploy)
-  if (!user) {
-    user = await db.user.create({
-      data: {
-        id: supabaseUser.id,
-        email: supabaseUser.email ?? "",
-        displayName:
-          (supabaseUser.user_metadata?.full_name as string | undefined) ??
-          (supabaseUser.user_metadata?.name as string | undefined) ??
-          null,
-      },
-    });
+  if (isNew) {
     await db.category.createMany({
       data: DEFAULT_CATEGORIES.map((c) => ({
-        userId: user!.id,
+        userId: user.id,
         ...c,
         isDefault: true,
       })),
@@ -66,4 +70,5 @@ export async function getUser(): Promise<AuthUser | null> {
     email: supabaseUser.email ?? user.email,
     user,
   };
+
 }

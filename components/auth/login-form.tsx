@@ -12,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export function LoginForm() {
-  const [state, action, pending] = useActionState<ActionResult | null, FormData>(signIn, null);
+  const [state, action, pending] = useActionState<
+    ActionResult | null,
+    FormData
+  >(signIn, null);
 
   const {
     register,
@@ -41,7 +44,10 @@ export function LoginForm() {
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <Label htmlFor="password">Password</Label>
-            <Link href="/reset-password" className="text-xs text-primary hover:underline">
+            <Link
+              href="/reset-password"
+              className="text-xs text-primary hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
@@ -53,7 +59,9 @@ export function LoginForm() {
             className="h-9 w-full"
           />
           {errors.password && (
-            <p className="text-destructive text-xs">{errors.password.message}</p>
+            <p className="text-destructive text-xs">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
@@ -68,7 +76,7 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <div className="relative">
+      {/* <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
@@ -77,11 +85,14 @@ export function LoginForm() {
         </div>
       </div>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton /> */}
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="text-primary hover:underline font-medium">
+        <Link
+          href="/signup"
+          className="text-primary hover:underline font-medium"
+        >
           Sign up
         </Link>
       </p>
