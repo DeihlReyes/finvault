@@ -9,6 +9,7 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 export const metadata = { title: "Settings — FinVault" };
 
@@ -40,7 +41,7 @@ async function SettingsContent() {
             <p className="text-xs text-muted-foreground mt-0.5">Day streak</p>
           </CardContent>
         </Card>
-        <Card className="flex-1">
+        <Card className="flex-1 hidden md:block">
           <CardContent className="pt-4 pb-3 text-center">
             <p className="text-sm font-bold truncate">{user.email}</p>
             <Badge variant="secondary" className="mt-1 text-xs font-normal">
@@ -52,9 +53,10 @@ async function SettingsContent() {
 
       {/* Profile form */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="text-base">Profile</CardTitle>
         </CardHeader>
+        <Separator />
         <CardContent className="pt-0">
           <ProfileForm
             initialValues={{
@@ -79,9 +81,10 @@ async function SettingsContent() {
 
       {/* Notifications */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="text-base">Notifications</CardTitle>
         </CardHeader>
+        <Separator />
         <CardContent className="pt-0">
           <NotificationPreferences />
         </CardContent>
@@ -89,11 +92,12 @@ async function SettingsContent() {
 
       {/* Danger zone */}
       <Card className="border-destructive/40">
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="text-base text-destructive">
             Danger zone
           </CardTitle>
         </CardHeader>
+        <Separator />
         <CardContent className="pt-0">
           <DangerZone />
         </CardContent>

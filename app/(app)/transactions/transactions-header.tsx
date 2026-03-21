@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add } from "@hugeicons/core-free-icons";
 
 type Props = {
   wallets: { id: string; name: string; currency: string }[];
@@ -34,8 +36,18 @@ type Props = {
 };
 
 const MONTHS = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 export function TransactionsHeader({ wallets, categories, current }: Props) {
@@ -44,7 +56,10 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
   const searchParams = useSearchParams();
 
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [formData, setFormData] = useState<{ wallets: typeof wallets; categories: typeof categories } | null>(null);
+  const [formData, setFormData] = useState<{
+    wallets: typeof wallets;
+    categories: typeof categories;
+  } | null>(null);
   const [loading, startLoading] = useTransition();
 
   function setParam(key: string, value: string | undefined) {
@@ -69,35 +84,50 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Transactions</h2>
-          <Button size="sm" className="hidden md:flex" onClick={handleOpenSheet}>+ Add</Button>
+          <Button className="hidden md:flex" onClick={handleOpenSheet}>
+            <HugeiconsIcon icon={Add} /> Add Transaction
+          </Button>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <Select value={String(current.month)} onValueChange={(v) => v && setParam("month", v)}>
-            <SelectTrigger className="h-8 text-xs w-auto shrink-0">
+        <div className="flex gap-2 pb-1 flex-wrap">
+          <Select
+            value={String(current.month)}
+            onValueChange={(v) => v && setParam("month", v)}
+          >
+            <SelectTrigger>
               <SelectValue>{MONTHS[current.month - 1]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {MONTHS.map((m, i) => (
-                <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+                <SelectItem key={i} value={String(i + 1)}>
+                  {m}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={String(current.year)} onValueChange={(v) => v && setParam("year", v)}>
-            <SelectTrigger className="h-8 text-xs w-auto shrink-0">
+          <Select
+            value={String(current.year)}
+            onValueChange={(v) => v && setParam("year", v)}
+          >
+            <SelectTrigger>
               <SelectValue>{current.year}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {[2024, 2025, 2026, 2027].map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={current.type ?? ""} onValueChange={(v) => setParam("type", v || undefined)}>
-            <SelectTrigger className="h-8 text-xs w-auto shrink-0">
+          <Select
+            value={current.type ?? ""}
+            onValueChange={(v) => setParam("type", v || undefined)}
+          >
+            <SelectTrigger>
               <SelectValue>
                 {current.type
                   ? current.type.charAt(0) + current.type.slice(1).toLowerCase()
@@ -113,24 +143,33 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
           </Select>
 
           {wallets.length > 1 && (
-            <Select value={current.wallet ?? ""} onValueChange={(v) => setParam("wallet", v || undefined)}>
-              <SelectTrigger className="h-8 text-xs w-auto shrink-0">
+            <Select
+              value={current.wallet ?? ""}
+              onValueChange={(v) => setParam("wallet", v || undefined)}
+            >
+              <SelectTrigger>
                 <SelectValue>
-                  {wallets.find((w) => w.id === current.wallet)?.name ?? "All wallets"}
+                  {wallets.find((w) => w.id === current.wallet)?.name ??
+                    "All wallets"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All wallets</SelectItem>
                 {wallets.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
 
           {categories.length > 0 && (
-            <Select value={current.category ?? ""} onValueChange={(v) => setParam("category", v || undefined)}>
-              <SelectTrigger className="h-8 text-xs w-auto shrink-0">
+            <Select
+              value={current.category ?? ""}
+              onValueChange={(v) => setParam("category", v || undefined)}
+            >
+              <SelectTrigger>
                 <SelectValue>
                   {(() => {
                     const c = categories.find((c) => c.id === current.category);
@@ -141,7 +180,9 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
               <SelectContent>
                 <SelectItem value="">All categories</SelectItem>
                 {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.emoji} {c.name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.emoji} {c.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -157,14 +198,19 @@ export function TransactionsHeader({ wallets, categories, current }: Props) {
           <CredenzaBody className="pb-4">
             {loading && (
               <div className="space-y-3">
-                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
               </div>
             )}
             {!loading && formData && (
               <TransactionForm
                 wallets={formData.wallets}
                 categories={formData.categories}
-                onSuccess={() => { setSheetOpen(false); router.refresh(); }}
+                onSuccess={() => {
+                  setSheetOpen(false);
+                  router.refresh();
+                }}
               />
             )}
           </CredenzaBody>

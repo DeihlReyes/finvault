@@ -26,6 +26,8 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add, Edit, Trash } from "@hugeicons/core-free-icons";
 
 type Wallet = {
   id: string;
@@ -84,13 +86,17 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Wallets</h2>
-          <Button size="sm" onClick={openAdd}>+ Add</Button>
+          <Button onClick={openAdd}>
+            <HugeiconsIcon icon={Add} /> Add Wallet
+          </Button>
         </div>
 
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">Total Balance</p>
-            <p className="text-2xl font-bold mt-0.5">{formatCurrency(totalBalance, currency)}</p>
+            <p className="text-2xl font-bold mt-0.5">
+              {formatCurrency(totalBalance, currency)}
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
               Across {wallets.length} wallet{wallets.length !== 1 ? "s" : ""}
             </p>
@@ -108,26 +114,29 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-semibold leading-tight">{wallet.name}</p>
-                    <Badge variant="secondary" className="mt-1 text-xs font-normal">
+                    <Badge
+                      variant="secondary"
+                      className="mt-1 text-xs font-normal"
+                    >
                       {wallet.typeLabel}
                     </Badge>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-xs"
+                      className="h-10 w-10"
                       onClick={() => openEdit(wallet)}
                     >
-                      ✎
+                      <HugeiconsIcon icon={Edit} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-xs hover:text-destructive hover:bg-destructive/10"
+                      className="h-10 w-10 hover:text-destructive hover:bg-destructive/10"
                       onClick={() => setArchiveTarget(wallet)}
                     >
-                      🗑
+                      <HugeiconsIcon icon={Trash} />
                     </Button>
                   </div>
                 </div>
@@ -138,21 +147,28 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
             </Card>
           ))}
 
-          <button
+          <Button
+            variant={"outline"}
             onClick={openAdd}
-            className="rounded-xl border border-dashed border-border flex items-center justify-center gap-2 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors min-h-[7rem]"
+            className="rounded-xl border border-dashed border-border flex items-center justify-center gap-2 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors min-h-28"
           >
-            <span className="text-xl">+</span> Add wallet
-          </button>
+            <HugeiconsIcon icon={Add} /> Add Wallet
+          </Button>
         </div>
       </div>
 
-      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
-        <AlertDialogContent size="sm">
+      <AlertDialog
+        open={!!archiveTarget}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+      >
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive &ldquo;{archiveTarget?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Archive &ldquo;{archiveTarget?.name}&rdquo;?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              The wallet will be hidden from your dashboard. Transactions are preserved.
+              The wallet will be hidden from your dashboard. Transactions are
+              preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -171,7 +187,9 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
       <Credenza open={sheetOpen} onOpenChange={setSheetOpen}>
         <CredenzaContent>
           <CredenzaHeader>
-            <CredenzaTitle>{editWallet ? "Edit Wallet" : "New Wallet"}</CredenzaTitle>
+            <CredenzaTitle>
+              {editWallet ? "Edit Wallet" : "New Wallet"}
+            </CredenzaTitle>
           </CredenzaHeader>
           <CredenzaBody className="pb-4">
             <WalletForm

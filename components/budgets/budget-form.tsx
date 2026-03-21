@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 "use no memo";
 
@@ -32,7 +33,20 @@ import {
 type Category = { id: string; name: string; emoji: string };
 type Props = { categories: Category[]; onSuccess?: () => void };
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 export function BudgetForm({ categories, onSuccess }: Props) {
   const now = new Date();
@@ -86,7 +100,9 @@ export function BudgetForm({ categories, onSuccess }: Props) {
                   <SelectTrigger className="w-full h-9">
                     <SelectValue placeholder="Select a category…">
                       {(() => {
-                        const c = categories.find((c) => c.id === selectedCategoryId);
+                        const c = categories.find(
+                          (c) => c.id === selectedCategoryId,
+                        );
                         return c ? `${c.emoji} ${c.name}` : undefined;
                       })()}
                     </SelectValue>
@@ -117,7 +133,12 @@ export function BudgetForm({ categories, onSuccess }: Props) {
                   name={field.name}
                   ref={field.ref}
                   onBlur={field.onBlur}
-                  value={field.value == null || (typeof field.value === "number" && isNaN(field.value)) ? "" : field.value}
+                  value={
+                    field.value == null ||
+                    (typeof field.value === "number" && isNaN(field.value))
+                      ? ""
+                      : field.value
+                  }
                   type="number"
                   step="0.01"
                   placeholder="e.g. 500.00"
@@ -144,11 +165,15 @@ export function BudgetForm({ categories, onSuccess }: Props) {
                     onValueChange={(v) => field.onChange(Number(v))}
                   >
                     <SelectTrigger className="h-9">
-                      <SelectValue>{MONTHS[(selectedMonth as number) - 1]}</SelectValue>
+                      <SelectValue>
+                        {MONTHS[(selectedMonth as number) - 1]}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {MONTHS.map((m, i) => (
-                        <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                        <SelectItem key={i + 1} value={String(i + 1)}>
+                          {m}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -173,8 +198,14 @@ export function BudgetForm({ categories, onSuccess }: Props) {
                       <SelectValue>{selectedYear}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
-                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                      {[
+                        now.getFullYear() - 1,
+                        now.getFullYear(),
+                        now.getFullYear() + 1,
+                      ].map((y) => (
+                        <SelectItem key={y} value={String(y)}>
+                          {y}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -200,7 +231,10 @@ export function BudgetForm({ categories, onSuccess }: Props) {
                     className="mt-0.5"
                   />
                   <div>
-                    <FormLabel htmlFor="rolloverEnabled" className="cursor-pointer font-medium text-sm">
+                    <FormLabel
+                      htmlFor="rolloverEnabled"
+                      className="cursor-pointer font-medium text-sm"
+                    >
                       Roll over unused budget
                     </FormLabel>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -219,7 +253,11 @@ export function BudgetForm({ categories, onSuccess }: Props) {
           </div>
         )}
 
-        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full h-10">
+        <Button
+          type="submit"
+          disabled={form.formState.isSubmitting}
+          className="w-full h-10"
+        >
           {form.formState.isSubmitting ? "Saving…" : "Create Budget"}
         </Button>
       </form>

@@ -10,7 +10,7 @@ import type { ActionResult } from "@/types/api";
 
 export async function createBudget(
   _prev: ActionResult<{ id: string }> | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<{ id: string }>> {
   const auth = await getUser();
   if (!auth) return { success: false, error: "Not authenticated" };
@@ -28,7 +28,10 @@ export async function createBudget(
     return {
       success: false,
       error: "Validation failed",
-      fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: result.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
     };
   }
 
@@ -46,7 +49,7 @@ export async function createBudget(
 export async function updateBudget(
   id: string,
   _prev: ActionResult | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   const auth = await getUser();
   if (!auth) return { success: false, error: "Not authenticated" };
@@ -63,13 +66,19 @@ export async function updateBudget(
     return {
       success: false,
       error: "Validation failed",
-      fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: result.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
     };
   }
 
   await db.budget.updateMany({
     where: { id, userId: auth.supabaseId },
-    data: { monthlyLimit: result.data.monthlyLimit, rolloverEnabled: result.data.rolloverEnabled },
+    data: {
+      monthlyLimit: result.data.monthlyLimit,
+      rolloverEnabled: result.data.rolloverEnabled,
+    },
   });
 
   revalidatePath("/", "layout");

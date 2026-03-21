@@ -26,7 +26,7 @@ export default function AppError({
               {error.message || "An unexpected error occurred."}
             </p>
           </div>
-          <Button onClick={reset} variant="outline" size="sm">
+          <Button onClick={reset} variant="outline">
             Try again
           </Button>
         </CardContent>

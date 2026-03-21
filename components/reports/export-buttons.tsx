@@ -31,7 +31,6 @@ export function ExportButtons({ month, year }: Props) {
     <div className="flex gap-2">
       <Button
         variant="outline"
-        size="sm"
         disabled={loadingCsv}
         onClick={() => handleExport("csv")}
       >
@@ -39,7 +38,6 @@ export function ExportButtons({ month, year }: Props) {
       </Button>
       <Button
         variant="outline"
-        size="sm"
         disabled={loadingPdf}
         onClick={() => handleExport("pdf")}
       >

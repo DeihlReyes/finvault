@@ -25,6 +25,8 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add } from "@hugeicons/core-free-icons";
 
 type Budget = {
   id: string;
@@ -70,14 +72,18 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
   }
 
   const usedCategoryIds = new Set(budgets.map((b) => b.categoryId));
-  const availableCategories = categories.filter((c) => !usedCategoryIds.has(c.id));
+  const availableCategories = categories.filter(
+    (c) => !usedCategoryIds.has(c.id),
+  );
 
   return (
     <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Budgets</h2>
-          <Button size="sm" onClick={() => setSheetOpen(true)}>+ Add</Button>
+          <Button onClick={() => setSheetOpen(true)}>
+            <HugeiconsIcon icon={Add} /> Create Budget
+          </Button>
         </div>
 
         {budgets.length === 0 ? (
@@ -85,7 +91,9 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
             <p className="text-4xl mb-3">📊</p>
             <p className="text-sm mb-1 font-medium">No budgets this month</p>
             <p className="text-xs mb-4">Set spending limits to stay on track</p>
-            <Button size="sm" onClick={() => setSheetOpen(true)}>Create budget</Button>
+            <Button onClick={() => setSheetOpen(true)}>
+              <HugeiconsIcon icon={Add} /> Create Budget
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -94,8 +102,8 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
                 budget.percentage >= 85
                   ? "bg-destructive"
                   : budget.percentage >= 60
-                  ? "bg-accent"
-                  : "bg-[oklch(0.65_0.15_145)]";
+                    ? "bg-accent"
+                    : "bg-[oklch(0.65_0.15_145)]";
 
               return (
                 <Card key={budget.id} className="group">
@@ -103,7 +111,9 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
                         <span>{budget.categoryEmoji}</span>
-                        <span className="font-medium text-sm">{budget.categoryName}</span>
+                        <span className="font-medium text-sm">
+                          {budget.categoryName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
@@ -123,7 +133,9 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${barColor}`}
-                        style={{ width: `${Math.min(100, budget.percentage)}%` }}
+                        style={{
+                          width: `${Math.min(100, budget.percentage)}%`,
+                        }}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 text-right">
@@ -137,12 +149,16 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
         )}
       </div>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent size="sm">
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete budget?</AlertDialogTitle>
             <AlertDialogDescription>
-              The {deleteTarget?.categoryEmoji} {deleteTarget?.categoryName} budget will be permanently removed.
+              The {deleteTarget?.categoryEmoji} {deleteTarget?.categoryName}{" "}
+              budget will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -169,7 +185,10 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
                 All categories already have budgets this month.
               </p>
             ) : (
-              <BudgetForm categories={availableCategories} onSuccess={onFormSuccess} />
+              <BudgetForm
+                categories={availableCategories}
+                onSuccess={onFormSuccess}
+              />
             )}
           </CredenzaBody>
         </CredenzaContent>

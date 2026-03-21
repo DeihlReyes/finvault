@@ -27,7 +27,7 @@ export function NotificationPreferences() {
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
         ),
       });
       const json = sub.toJSON();
@@ -73,7 +73,7 @@ export function NotificationPreferences() {
   if (!supported) return null;
 
   return (
-    <div className="flex items-center justify-between py-3">
+    <div className="flex items-center justify-between py-3 gap-3">
       <div>
         <p className="text-sm font-medium">Budget alerts</p>
         <p className="text-xs text-muted-foreground">
@@ -82,7 +82,6 @@ export function NotificationPreferences() {
       </div>
       <Button
         variant={subscribed ? "destructive" : "outline"}
-        size="sm"
         disabled={loading}
         onClick={subscribed ? handleUnsubscribe : handleSubscribe}
       >

@@ -55,7 +55,7 @@ export function WelcomeModal({ displayName, onDismiss }: Props) {
     <AnimatePresence>
       <motion.div
         key="welcome-overlay"
-        className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+        className="fixed inset-0 z-90 flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -131,8 +131,8 @@ export function WelcomeModal({ displayName, onDismiss }: Props) {
             transition={{ delay: 0.4 }}
           >
             Every transaction earns you{" "}
-            <span className="text-primary font-semibold">XP</span>. Log daily
-            to level up and unlock achievements!
+            <span className="text-primary font-semibold">XP</span>. Log daily to
+            level up and unlock achievements!
           </motion.p>
 
           <motion.div

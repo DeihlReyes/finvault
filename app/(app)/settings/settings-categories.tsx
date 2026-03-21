@@ -25,6 +25,9 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add, Edit, Trash } from "@hugeicons/core-free-icons";
+import { Separator } from "@/components/ui/separator";
 
 type Category = {
   id: string;
@@ -36,7 +39,9 @@ type Category = {
 
 export function SettingsCategories({ categories }: { categories: Category[] }) {
   const router = useRouter();
-  const [sheetMode, setSheetMode] = useState<null | "add" | { edit: Category }>(null);
+  const [sheetMode, setSheetMode] = useState<null | "add" | { edit: Category }>(
+    null,
+  );
   const [archiveTarget, setArchiveTarget] = useState<Category | null>(null);
   const [archiving, setArchiving] = useState(false);
 
@@ -67,9 +72,16 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Categories</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setSheetMode("add")}>+ Add</Button>
+            <Button
+              className="cursor-pointer"
+              variant="outline"
+              onClick={() => setSheetMode("add")}
+            >
+              <HugeiconsIcon icon={Add} /> Add Category
+            </Button>
           </div>
         </CardHeader>
+        <Separator />
         <CardContent className="pt-0">
           <div className="space-y-1">
             {categories.map((cat) => (
@@ -86,25 +98,27 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
                   </span>
                   <span>{cat.name}</span>
                   {cat.isDefault && (
-                    <Badge variant="secondary" className="text-xs font-normal">default</Badge>
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      default
+                    </Badge>
                   )}
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-xs"
+                    className="h-7 w-7"
                     onClick={() => setSheetMode({ edit: cat })}
                   >
-                    ✎
+                    <HugeiconsIcon icon={Edit} />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-xs hover:text-destructive hover:bg-destructive/10"
+                    className="h-7 w-7 hover:text-destructive hover:bg-destructive/10"
                     onClick={() => setArchiveTarget(cat)}
                   >
-                    🗑
+                    <HugeiconsIcon icon={Trash} />
                   </Button>
                 </div>
               </div>
@@ -113,10 +127,15 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
-        <AlertDialogContent size="sm">
+      <AlertDialog
+        open={!!archiveTarget}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+      >
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive &ldquo;{archiveTarget?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Archive &ldquo;{archiveTarget?.name}&rdquo;?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               The category will be hidden. Existing transactions are preserved.
             </AlertDialogDescription>
@@ -134,17 +153,26 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Credenza open={sheetMode !== null} onOpenChange={(open) => !open && setSheetMode(null)}>
+      <Credenza
+        open={sheetMode !== null}
+        onOpenChange={(open) => !open && setSheetMode(null)}
+      >
         <CredenzaContent>
           <CredenzaHeader>
-            <CredenzaTitle>{editTarget ? "Edit Category" : "New Category"}</CredenzaTitle>
+            <CredenzaTitle>
+              {editTarget ? "Edit Category" : "New Category"}
+            </CredenzaTitle>
           </CredenzaHeader>
           <CredenzaBody>
             <CategoryForm
               editId={editTarget?.id}
               initialValues={
                 editTarget
-                  ? { name: editTarget.name, emoji: editTarget.emoji, color: editTarget.color }
+                  ? {
+                      name: editTarget.name,
+                      emoji: editTarget.emoji,
+                      color: editTarget.color,
+                    }
                   : undefined
               }
               onSuccess={onFormSuccess}

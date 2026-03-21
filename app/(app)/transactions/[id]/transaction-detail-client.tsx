@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, startTransition } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  startTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import { updateTransaction, deleteTransaction } from "@/actions/transactions";
 import { toast } from "sonner";
@@ -53,7 +59,12 @@ type Props = {
   currency: string;
 };
 
-export function TransactionDetailClient({ transaction: tx, wallets, categories, currency }: Props) {
+export function TransactionDetailClient({
+  transaction: tx,
+  wallets,
+  categories,
+  currency,
+}: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState(tx.type);
@@ -62,10 +73,10 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
   const prevState = useRef<UpdateResult | null>(null);
 
   const boundUpdate = updateTransaction.bind(null, tx.id);
-  const [state, formAction, pending] = useActionState<UpdateResult | null, FormData>(
-    boundUpdate,
-    null
-  );
+  const [state, formAction, pending] = useActionState<
+    UpdateResult | null,
+    FormData
+  >(boundUpdate, null);
 
   useEffect(() => {
     if (!state || state === prevState.current) return;
@@ -95,77 +106,87 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
   if (!editing) {
     return (
       <>
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleting}
-              onClick={handleDelete}
-            >
-              {deleting ? "Deleting…" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            ← Back
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
-            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setConfirmDelete(true)}>
-              Delete
-            </Button>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="text-center">
-              <span className="text-4xl">{tx.categoryEmoji}</span>
-              <p
-                className={`text-3xl font-bold mt-2 ${
-                  tx.type === "INCOME"
-                    ? "text-[oklch(0.65_0.15_145)]"
-                    : tx.type === "EXPENSE"
-                    ? "text-destructive"
-                    : ""
-                }`}
+        <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={deleting}
+                onClick={handleDelete}
               >
-                {tx.type === "INCOME" ? "+" : tx.type === "EXPENSE" ? "-" : ""}
-                {formatCurrency(tx.amount, currency)}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">{tx.type}</p>
-            </div>
+                {deleting ? "Deleting…" : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-            <Separator />
-
-            <div className="space-y-3">
-              {[
-                { label: "Wallet", value: tx.walletName },
-                { label: "Category", value: tx.categoryName || "—" },
-                { label: "Date", value: formatDate(new Date(tx.date)) },
-                { label: "Note", value: tx.note || "—" },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span>{value}</span>
-                </div>
-              ))}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={() => router.back()}>
+              ← Back
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="text-center">
+                <span className="text-4xl">{tx.categoryEmoji}</span>
+                <p
+                  className={`text-3xl font-bold mt-2 ${
+                    tx.type === "INCOME"
+                      ? "text-[oklch(0.65_0.15_145)]"
+                      : tx.type === "EXPENSE"
+                        ? "text-destructive"
+                        : ""
+                  }`}
+                >
+                  {tx.type === "INCOME"
+                    ? "+"
+                    : tx.type === "EXPENSE"
+                      ? "-"
+                      : ""}
+                  {formatCurrency(tx.amount, currency)}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">{tx.type}</p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                {[
+                  { label: "Wallet", value: tx.walletName },
+                  { label: "Category", value: tx.categoryName || "—" },
+                  { label: "Date", value: formatDate(new Date(tx.date)) },
+                  { label: "Note", value: tx.note || "—" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </>
     );
   }
@@ -174,7 +195,9 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Edit Transaction</h2>
-        <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
+        <Button variant="ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </Button>
       </div>
 
       <Card>
@@ -185,9 +208,15 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
             {/* Type */}
             <Tabs value={type} onValueChange={(v) => setType(v as typeof type)}>
               <TabsList className="w-full">
-                <TabsTrigger value="EXPENSE" className="flex-1">Expense</TabsTrigger>
-                <TabsTrigger value="INCOME" className="flex-1">Income</TabsTrigger>
-                <TabsTrigger value="TRANSFER" className="flex-1">Transfer</TabsTrigger>
+                <TabsTrigger value="EXPENSE" className="flex-1">
+                  Expense
+                </TabsTrigger>
+                <TabsTrigger value="INCOME" className="flex-1">
+                  Income
+                </TabsTrigger>
+                <TabsTrigger value="TRANSFER" className="flex-1">
+                  Transfer
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -212,7 +241,9 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
                 </SelectTrigger>
                 <SelectContent>
                   {wallets.map((w) => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -228,7 +259,9 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
                   <SelectContent>
                     <SelectItem value="">No category</SelectItem>
                     {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.emoji} {c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.emoji} {c.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -35,10 +35,10 @@ export function AppSidebar({
 
   return (
     <Sidebar className="p-4" variant="inset" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="mb-6">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
+            <SidebarMenuButton render={<Link href="/dashboard" />}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/icon.png"
@@ -61,7 +61,7 @@ export function AppSidebar({
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-2">
+            <SidebarMenu className="gap-3">
               {NAV_ITEMS.map((item) => {
                 const isActive =
                   pathname === item.href ||

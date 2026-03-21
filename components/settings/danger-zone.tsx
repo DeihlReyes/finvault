@@ -13,6 +13,7 @@ import {
   CredenzaBody,
   CredenzaFooter,
 } from "@/components/ui/credenza";
+import Link from "next/link";
 
 const CONFIRM_PHRASE = "delete my account";
 
@@ -40,18 +41,13 @@ export function DangerZone() {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <a
-          href="/api/export/data"
-          download
-          className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-        >
-          Download all my data
-        </a>
-        <Button
-          variant="destructive"
-          className="w-full"
-          onClick={handleOpen}
-        >
+        <Button variant={"outline"}>
+          <Link href="/api/export/data" download>
+            Download all my data
+          </Link>
+        </Button>
+
+        <Button variant="destructive" onClick={handleOpen}>
           Delete account
         </Button>
       </div>
