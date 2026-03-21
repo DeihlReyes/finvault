@@ -42,7 +42,7 @@ async function WalletContent() {
 
 export default function WalletsPage() {
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6  mx-auto">
       <Suspense
         fallback={
           <div className="space-y-4">

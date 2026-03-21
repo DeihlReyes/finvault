@@ -5,7 +5,11 @@ import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { xpProgressToNextLevel } from "@/types/gamification";
-import { seedMonthlyChallenge, CHALLENGE_TYPE, CHALLENGE_TARGET } from "@/lib/challenges/monthly";
+import {
+  seedMonthlyChallenge,
+  CHALLENGE_TYPE,
+  CHALLENGE_TARGET,
+} from "@/lib/challenges/monthly";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,40 +29,48 @@ async function DashboardContent() {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
 
-  const [wallets, recentTransactions, upcomingRecurring, monthlyChallenge] = await Promise.all([
-    db.wallet.findMany({
-      where: { userId, isArchived: false },
-      orderBy: { createdAt: "asc" },
-    }),
-    db.transaction.findMany({
-      where: { userId },
-      orderBy: { date: "desc" },
-      take: 5,
-      include: { category: true, wallet: true },
-    }),
-    db.recurringRule.findMany({
-      where: { userId, isPaused: false },
-      orderBy: { nextDueDate: "asc" },
-      take: 3,
-    }),
-    seedMonthlyChallenge(userId, month, year).then(() =>
-      db.monthlyChallenge.findUnique({
-        where: {
-          userId_challengeType_month_year: { userId, challengeType: CHALLENGE_TYPE, month, year },
-        },
-      })
-    ),
-  ]);
+  const [wallets, recentTransactions, upcomingRecurring, monthlyChallenge] =
+    await Promise.all([
+      db.wallet.findMany({
+        where: { userId, isArchived: false },
+        orderBy: { createdAt: "asc" },
+      }),
+      db.transaction.findMany({
+        where: { userId },
+        orderBy: { date: "desc" },
+        take: 5,
+        include: { category: true, wallet: true },
+      }),
+      db.recurringRule.findMany({
+        where: { userId, isPaused: false },
+        orderBy: { nextDueDate: "asc" },
+        take: 3,
+      }),
+      seedMonthlyChallenge(userId, month, year).then(() =>
+        db.monthlyChallenge.findUnique({
+          where: {
+            userId_challengeType_month_year: {
+              userId,
+              challengeType: CHALLENGE_TYPE,
+              month,
+              year,
+            },
+          },
+        }),
+      ),
+    ]);
 
   const totalBalance = wallets.reduce((sum, w) => sum + Number(w.balance), 0);
   const { level, progress } = xpProgressToNextLevel(user.totalXP);
 
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 space-y-5  mx-auto">
       {/* Greeting */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Hey, {user.displayName ?? "there"} 👋</h2>
+          <h2 className="text-2xl font-bold">
+            Hey, {user.displayName ?? "there"} 👋
+          </h2>
           <p className="text-muted-foreground text-sm mt-0.5">
             Level {level} • {user.totalXP} XP
           </p>
@@ -85,7 +97,9 @@ async function DashboardContent() {
       <Card>
         <CardContent className="pt-5">
           <p className="text-sm text-muted-foreground mb-1">Net Balance</p>
-          <p className="text-3xl font-bold">{formatCurrency(totalBalance, user.currency)}</p>
+          <p className="text-3xl font-bold">
+            {formatCurrency(totalBalance, user.currency)}
+          </p>
           <p className="text-xs text-muted-foreground mt-1">
             Across {wallets.length} wallet{wallets.length !== 1 ? "s" : ""}
           </p>
@@ -104,7 +118,9 @@ async function DashboardContent() {
                 Log {CHALLENGE_TARGET} transactions this month
               </p>
               {monthlyChallenge.completedAt && (
-                <Badge variant="secondary" className="text-xs">✅ Done</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  ✅ Done
+                </Badge>
               )}
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -127,7 +143,10 @@ async function DashboardContent() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Recent Transactions</CardTitle>
-            <Link href="/transactions" className="text-xs text-primary hover:underline">
+            <Link
+              href="/transactions"
+              className="text-xs text-primary hover:underline"
+            >
               View all
             </Link>
           </div>
@@ -151,7 +170,9 @@ async function DashboardContent() {
                         <p className="text-sm font-medium leading-tight">
                           {tx.note ?? tx.category?.name ?? "Transaction"}
                         </p>
-                        <p className="text-xs text-muted-foreground">{tx.wallet.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx.wallet.name}
+                        </p>
                       </div>
                     </div>
                     <span
@@ -159,11 +180,15 @@ async function DashboardContent() {
                         tx.type === "INCOME"
                           ? "text-[oklch(0.65_0.15_145)]"
                           : tx.type === "EXPENSE"
-                          ? "text-destructive"
-                          : "text-muted-foreground"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
                       }`}
                     >
-                      {tx.type === "INCOME" ? "+" : tx.type === "EXPENSE" ? "-" : ""}
+                      {tx.type === "INCOME"
+                        ? "+"
+                        : tx.type === "EXPENSE"
+                          ? "-"
+                          : ""}
                       {formatCurrency(tx.amount, user.currency)}
                     </span>
                   </div>
@@ -219,7 +244,7 @@ export default function DashboardPage() {
 
 function DashboardSkeleton() {
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 space-y-5  mx-auto">
       <div className="flex justify-between items-start">
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />

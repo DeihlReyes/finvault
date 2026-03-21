@@ -5,9 +5,18 @@ import { getUser } from "@/lib/auth/get-user";
 
 const btn =
   "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
-const btnPrimary = cn(btn, "bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2");
-const btnOutline = cn(btn, "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2");
-const btnGhost = cn(btn, "hover:bg-accent hover:text-accent-foreground h-9 px-3");
+const btnPrimary = cn(
+  btn,
+  "bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2",
+);
+const btnOutline = cn(
+  btn,
+  "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2",
+);
+const btnGhost = cn(
+  btn,
+  "hover:bg-accent hover:text-accent-foreground h-9 px-3",
+);
 
 export const metadata = {
   title: "FinVault — Gamified Personal Finance, Free Forever",
@@ -81,7 +90,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
       <nav className="border-b border-border/50 sticky top-0 z-40 bg-background/80 backdrop-blur">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className=" mx-auto px-6 h-14 flex items-center justify-between">
           <span className="text-lg font-bold text-primary tracking-tight">
             FinVault
           </span>
@@ -100,7 +109,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
+      <section className=" mx-auto px-6 pt-20 pb-16 text-center">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-primary/20">
           Free forever — no credit card required
         </div>
@@ -113,7 +122,10 @@ export default function LandingPage() {
           Everything YNAB does — completely free.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/signup" className={cn(btnPrimary, "h-11 px-8 text-base")}>
+          <Link
+            href="/signup"
+            className={cn(btnPrimary, "h-11 px-8 text-base")}
+          >
             Start for free
           </Link>
           <Link href="/login" className={cn(btnOutline, "h-11 px-8 text-base")}>
@@ -123,7 +135,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing comparison */}
-      <section className="max-w-5xl mx-auto px-6 pb-20">
+      <section className=" mx-auto px-6 pb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-xl mx-auto">
           {COMPETITORS.map(({ name, price, highlight }) => (
             <div
@@ -132,13 +144,13 @@ export default function LandingPage() {
                 "rounded-xl border p-4 text-center",
                 highlight
                   ? "border-primary bg-primary/10"
-                  : "border-border bg-card"
+                  : "border-border bg-card",
               )}
             >
               <p
                 className={cn(
                   "text-xs font-medium mb-1",
-                  highlight ? "text-primary" : "text-muted-foreground"
+                  highlight ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 {name}
@@ -146,7 +158,7 @@ export default function LandingPage() {
               <p
                 className={cn(
                   "text-xl font-bold",
-                  highlight ? "text-primary" : "text-foreground"
+                  highlight ? "text-primary" : "text-foreground",
                 )}
               >
                 {price}
@@ -158,7 +170,7 @@ export default function LandingPage() {
 
       {/* Features */}
       <section className="border-t border-border/50 bg-card/30">
-        <div className="max-w-5xl mx-auto px-6 py-20">
+        <div className=" mx-auto px-6 py-20">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
             Everything you need. Nothing you pay for.
           </h2>
@@ -180,15 +192,15 @@ export default function LandingPage() {
       </section>
 
       {/* Gamification callout */}
-      <section className="max-w-5xl mx-auto px-6 py-20 text-center">
+      <section className=" mx-auto px-6 py-20 text-center">
         <p className="text-5xl mb-6">🎮</p>
         <h2 className="text-2xl md:text-3xl font-bold mb-4">
           Finance, but make it fun
         </h2>
         <p className="text-muted-foreground max-w-xl mx-auto mb-8">
           Every transaction earns XP. Log daily and build a streak. Unlock
-          achievements. Level up. Building good money habits has never felt
-          this rewarding.
+          achievements. Level up. Building good money habits has never felt this
+          rewarding.
         </p>
         <div className="flex flex-wrap justify-center gap-3 text-sm">
           {[
@@ -209,14 +221,17 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="border-t border-border/50 bg-primary/5">
-        <div className="max-w-5xl mx-auto px-6 py-20 text-center">
+        <div className=" mx-auto px-6 py-20 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Ready to take control?
           </h2>
           <p className="text-muted-foreground mb-8">
             Free forever. No hidden fees. Just better finances.
           </p>
-          <Link href="/signup" className={cn(btnPrimary, "h-11 px-10 text-base")}>
+          <Link
+            href="/signup"
+            className={cn(btnPrimary, "h-11 px-10 text-base")}
+          >
             Create your free account
           </Link>
         </div>
@@ -224,7 +239,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/50">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className=" mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="font-semibold text-primary">FinVault</span>
           <span>Built for people tired of paying for budgeting apps.</span>
         </div>

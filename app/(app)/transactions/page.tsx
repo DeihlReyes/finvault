@@ -17,7 +17,11 @@ type SearchParams = Promise<{
   category?: string;
 }>;
 
-async function TransactionList({ searchParams }: { searchParams: Awaited<SearchParams> }) {
+async function TransactionList({
+  searchParams,
+}: {
+  searchParams: Awaited<SearchParams>;
+}) {
   const auth = await getUser();
   if (!auth) redirect("/login");
 
@@ -58,7 +62,13 @@ async function TransactionList({ searchParams }: { searchParams: Awaited<SearchP
       <TransactionsHeader
         wallets={wallets}
         categories={categories}
-        current={{ type, month: filterMonth, year: filterYear, wallet, category }}
+        current={{
+          type,
+          month: filterMonth,
+          year: filterYear,
+          wallet,
+          category,
+        }}
       />
       <div className="space-y-2">
         {transactions.length === 0 ? (
@@ -75,7 +85,11 @@ async function TransactionList({ searchParams }: { searchParams: Awaited<SearchP
               amount={Number(tx.amount)}
               note={tx.note}
               date={tx.date}
-              category={tx.category ? { name: tx.category.name, emoji: tx.category.emoji } : null}
+              category={
+                tx.category
+                  ? { name: tx.category.name, emoji: tx.category.emoji }
+                  : null
+              }
               walletName={tx.wallet.name}
               currency={user.currency}
             />
@@ -86,11 +100,15 @@ async function TransactionList({ searchParams }: { searchParams: Awaited<SearchP
   );
 }
 
-export default async function TransactionsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function TransactionsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const params = await searchParams;
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
+    <div className="p-4 md:p-6  mx-auto space-y-4">
       <Suspense
         fallback={
           <div className="space-y-3">

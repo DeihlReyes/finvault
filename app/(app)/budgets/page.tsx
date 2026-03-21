@@ -54,7 +54,7 @@ async function BudgetContent() {
         spent,
         percentage,
       };
-    })
+    }),
   );
 
   return (
@@ -68,7 +68,7 @@ async function BudgetContent() {
 
 export default function BudgetsPage() {
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6  mx-auto">
       <Suspense
         fallback={
           <div className="space-y-3">

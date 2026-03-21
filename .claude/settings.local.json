@@ -44,7 +44,9 @@
       "Bash(ls \"C:/Users/DEIHL/Desktop/finvault/app/\\(app\\)/achievements/\")",
       "Bash(node -e \"require\\(''''./node_modules/framer-motion/dist/cjs/index.js''''\\)\")",
       "Bash(git add:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npx shadcn@latest add sidebar-08 --yes)",
+      "Bash(node -e \"require\\(''''sharp''''\\)\")"
     ]
   }
 }

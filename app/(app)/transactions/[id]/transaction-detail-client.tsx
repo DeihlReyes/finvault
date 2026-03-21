@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateTransaction, deleteTransaction } from "@/actions/transactions";
 import { toast } from "sonner";
@@ -68,15 +68,14 @@ export function TransactionDetailClient({ transaction: tx, wallets, categories, 
   );
 
   useEffect(() => {
-    if (state && state !== prevState.current) {
-      prevState.current = state;
-      if (state.success) {
-        toast.success("Transaction updated!");
-        setEditing(false);
-        router.refresh();
-      } else if (state.error) {
-        toast.error(state.error);
-      }
+    if (!state || state === prevState.current) return;
+    prevState.current = state;
+    if (state.success) {
+      toast.success("Transaction updated!");
+      startTransition(() => setEditing(false));
+      router.refresh();
+    } else if (state.error) {
+      toast.error(state.error);
     }
   }, [state, router]);
 

@@ -82,7 +82,9 @@ async function OverviewContent({
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground mb-1">Saved</p>
-            <p className={`text-base font-bold ${net >= 0 ? "text-[oklch(0.65_0.15_145)]" : "text-destructive"}`}>
+            <p
+              className={`text-base font-bold ${net >= 0 ? "text-[oklch(0.65_0.15_145)]" : "text-destructive"}`}
+            >
               {formatCurrency(net, currency)}
             </p>
           </CardContent>
@@ -108,7 +110,9 @@ async function OverviewContent({
                   <div key={entry.categoryId}>
                     {i > 0 && <Separator className="mb-3" />}
                     <div className="flex justify-between text-sm mb-1.5">
-                      <span>{cat?.emoji} {cat?.name ?? "Unknown"}</span>
+                      <span>
+                        {cat?.emoji} {cat?.name ?? "Unknown"}
+                      </span>
                       <span className="text-muted-foreground">
                         {formatCurrency(amount, currency)}{" "}
                         <span className="text-xs">({Math.round(pct)}%)</span>
@@ -195,7 +199,20 @@ async function TrendsContent({
   const months: Array<{ year: number; month: number; label: string }> = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(currentYear, currentMonth - 1 - i, 1);
-    const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const MONTH_LABELS = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     months.push({
       year: d.getFullYear(),
       month: d.getMonth() + 1,
@@ -222,13 +239,15 @@ async function TrendsContent({
         income: Number(inc._sum.amount ?? 0),
         expenses: Number(exp._sum.amount ?? 0),
       };
-    })
+    }),
   );
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Income vs Expenses (6 months)</CardTitle>
+        <CardTitle className="text-base">
+          Income vs Expenses (6 months)
+        </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <IncomeExpenseBarChart data={data} currency={currency} />
@@ -252,7 +271,20 @@ async function NetWorthContent({
     take: 90,
   });
 
-  const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const MONTH_LABELS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const chartData = snapshots.map((s) => ({
     label: `${MONTH_LABELS[s.date.getMonth()]} ${s.date.getDate()}`,
     value: Number(s.totalValue),
@@ -291,13 +323,28 @@ async function ReportsContent({
   return (
     <>
       {tab === "overview" && (
-        <OverviewContent userId={userId} currency={user.currency} from={from} to={to} />
+        <OverviewContent
+          userId={userId}
+          currency={user.currency}
+          from={from}
+          to={to}
+        />
       )}
       {tab === "categories" && (
-        <CategoriesContent userId={userId} currency={user.currency} from={from} to={to} />
+        <CategoriesContent
+          userId={userId}
+          currency={user.currency}
+          from={from}
+          to={to}
+        />
       )}
       {tab === "trends" && (
-        <TrendsContent userId={userId} currency={user.currency} currentMonth={month} currentYear={year} />
+        <TrendsContent
+          userId={userId}
+          currency={user.currency}
+          currentMonth={month}
+          currentYear={year}
+        />
       )}
       {tab === "networth" && (
         <NetWorthContent userId={userId} currency={user.currency} />
@@ -306,7 +353,11 @@ async function ReportsContent({
   );
 }
 
-export default async function ReportsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const params = await searchParams;
 
   const now = new Date();
@@ -315,7 +366,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
   const year = params.year ? parseInt(params.year) : now.getFullYear();
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
+    <div className="p-4 md:p-6  mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Reports</h2>
         <ExportButtons month={month} year={year} />

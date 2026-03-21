@@ -10,14 +10,14 @@ export function NotificationPreferences() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      setSupported(true);
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.pushManager.getSubscription().then((sub) => {
-          setSubscribed(!!sub);
-        });
-      });
-    }
+    if (!("serviceWorker" in navigator && "PushManager" in window)) return;
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => {
+        setSupported(true);
+        setSubscribed(!!sub);
+      })
+      .catch(() => {});
   }, []);
 
   async function handleSubscribe() {

@@ -169,17 +169,49 @@ export async function updateTransaction(
     };
   }
 
-  await db.transaction.updateMany({
+  // Fetch the old transaction to reverse its balance effect
+  const old = await db.transaction.findFirst({
     where: { id, userId: auth.supabaseId },
-    data: {
-      walletId: result.data.walletId,
-      destinationWalletId: result.data.destinationWalletId,
-      categoryId: result.data.categoryId,
-      amount: result.data.amount,
-      type: result.data.type,
-      date: result.data.date,
-      note: result.data.note,
-    },
+    select: { type: true, amount: true, walletId: true, destinationWalletId: true },
+  });
+  if (!old) return { success: false, error: "Transaction not found" };
+
+  const next = result.data;
+
+  await db.$transaction(async (prisma) => {
+    // 1. Reverse old balance effect
+    if (old.type === "INCOME") {
+      await prisma.wallet.update({ where: { id: old.walletId }, data: { balance: { decrement: old.amount } } });
+    } else if (old.type === "EXPENSE") {
+      await prisma.wallet.update({ where: { id: old.walletId }, data: { balance: { increment: old.amount } } });
+    } else if (old.type === "TRANSFER" && old.destinationWalletId) {
+      await prisma.wallet.update({ where: { id: old.walletId }, data: { balance: { increment: old.amount } } });
+      await prisma.wallet.update({ where: { id: old.destinationWalletId }, data: { balance: { decrement: old.amount } } });
+    }
+
+    // 2. Apply new balance effect
+    if (next.type === "INCOME") {
+      await prisma.wallet.update({ where: { id: next.walletId }, data: { balance: { increment: next.amount } } });
+    } else if (next.type === "EXPENSE") {
+      await prisma.wallet.update({ where: { id: next.walletId }, data: { balance: { decrement: next.amount } } });
+    } else if (next.type === "TRANSFER" && next.destinationWalletId) {
+      await prisma.wallet.update({ where: { id: next.walletId }, data: { balance: { decrement: next.amount } } });
+      await prisma.wallet.update({ where: { id: next.destinationWalletId }, data: { balance: { increment: next.amount } } });
+    }
+
+    // 3. Update the transaction record
+    await prisma.transaction.update({
+      where: { id },
+      data: {
+        walletId: next.walletId,
+        destinationWalletId: next.destinationWalletId,
+        categoryId: next.categoryId,
+        amount: next.amount,
+        type: next.type,
+        date: next.date,
+        note: next.note,
+      },
+    });
   });
 
   revalidatePath("/", "layout");

@@ -2,13 +2,12 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
-import { signOut } from "@/actions/auth";
 import { SettingsCategories } from "./settings-categories";
 import { NotificationPreferences } from "@/components/settings/notification-preferences";
 import { DangerZone } from "@/components/settings/danger-zone";
+import { ProfileForm } from "@/components/settings/profile-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata = { title: "Settings — FinVault" };
@@ -26,27 +25,44 @@ async function SettingsContent() {
 
   return (
     <div className="space-y-6">
-      {/* Profile */}
+      {/* Stats */}
+      <div className="flex gap-3">
+        <Card className="flex-1">
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-2xl font-bold">{user.level}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Level</p>
+            <p className="text-xs text-muted-foreground">{user.totalXP} XP</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1">
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-2xl font-bold">🔥 {user.streak}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Day streak</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1">
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-sm font-bold truncate">{user.email}</p>
+            <Badge variant="secondary" className="mt-1 text-xs font-normal">
+              Account
+            </Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Profile form */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Profile</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 space-y-3">
-          {[
-            { label: "Display name", value: user.displayName ?? "—" },
-            { label: "Email", value: user.email },
-            { label: "Currency", value: user.currency },
-            { label: "Level", value: `${user.level} (${user.totalXP} XP)` },
-            { label: "Streak", value: `🔥 ${user.streak} days` },
-          ].map(({ label, value }, i, arr) => (
-            <div key={label}>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="truncate ml-4 max-w-[60%] text-right">{value}</span>
-              </div>
-              {i < arr.length - 1 && <Separator className="mt-3" />}
-            </div>
-          ))}
+        <CardContent className="pt-0">
+          <ProfileForm
+            initialValues={{
+              displayName: user.displayName,
+              currency: user.currency,
+              timezone: user.timezone,
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -71,28 +87,12 @@ async function SettingsContent() {
         </CardContent>
       </Card>
 
-      {/* Account */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Account</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <form action={signOut}>
-            <Button
-              type="submit"
-              variant="outline"
-              className="w-full hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
-            >
-              Sign out
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
       {/* Danger zone */}
       <Card className="border-destructive/40">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base text-destructive">Danger zone</CardTitle>
+          <CardTitle className="text-base text-destructive">
+            Danger zone
+          </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <DangerZone />
@@ -104,7 +104,7 @@ async function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
+    <div className="p-4 md:p-6  mx-auto space-y-4">
       <h2 className="text-xl font-bold">Settings</h2>
       <Suspense
         fallback={

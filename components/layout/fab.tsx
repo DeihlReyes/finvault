@@ -11,6 +11,8 @@ import {
   CredenzaTitle,
   CredenzaBody,
 } from "@/components/ui/credenza";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { PlusSignIcon } from "@hugeicons/core-free-icons";
 
 type FormData = Awaited<ReturnType<typeof getTransactionFormData>>;
 
@@ -33,10 +35,10 @@ export function FAB() {
     <>
       <Button
         onClick={() => handleOpen(true)}
-        className="md:hidden fixed bottom-20 right-4 z-50 size-14 rounded-full shadow-lg text-2xl"
+        className="fixed bottom-6 right-6 z-50 size-12 rounded-full shadow-lg text-lg md:hidden"
         aria-label="Add transaction"
       >
-        +
+        <HugeiconsIcon icon={PlusSignIcon} size={20} strokeWidth={2} />
       </Button>
 
       <Credenza open={open} onOpenChange={handleOpen}>

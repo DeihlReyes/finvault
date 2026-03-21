@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/providers/toast-provider";
 import { SwRegistration } from "@/components/providers/sw-registration";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
@@ -34,11 +35,17 @@ export default function RootLayout({
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/icons/192x192.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/180x180.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="FinVault" />
         <meta name="theme-color" content="#6C47FF" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
         <Toaster />
         <SwRegistration />
       </body>
