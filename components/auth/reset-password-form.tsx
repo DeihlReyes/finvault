@@ -3,6 +3,9 @@
 import { useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { requestPasswordReset, updatePassword } from "@/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -25,26 +28,22 @@ export function ResetPasswordForm() {
           }}
           className="space-y-4"
         >
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
               id="email"
               name="email"
               type="email"
               required
-              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-9 w-full"
             />
           </div>
           {resetState?.success === false && (
             <p className="text-destructive text-sm">{resetState.error}</p>
           )}
-          <button
-            type="submit"
-            disabled={resetPending}
-            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={resetPending} className="w-full h-9">
             {resetPending ? "Sending…" : "Send reset link"}
-          </button>
+          </Button>
         </form>
       </>
     );
@@ -65,37 +64,33 @@ export function ResetPasswordForm() {
     <>
       <h2 className="text-xl font-semibold mb-6">Set new password</h2>
       <form action={newAction} className="space-y-4">
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-1">New password</label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="password">New password</Label>
+          <Input
             id="password"
             name="password"
             type="password"
             required
             minLength={8}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="h-9 w-full"
           />
         </div>
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">Confirm password</label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Input
             id="confirmPassword"
             name="confirmPassword"
             type="password"
             required
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="h-9 w-full"
           />
         </div>
         {newState?.success === false && (
           <p className="text-destructive text-sm">{newState.error}</p>
         )}
-        <button
-          type="submit"
-          disabled={newPending}
-          className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={newPending} className="w-full h-9">
           {newPending ? "Updating…" : "Update password"}
-        </button>
+        </Button>
       </form>
     </>
   );

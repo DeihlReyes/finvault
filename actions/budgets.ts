@@ -9,7 +9,7 @@ import { checkAndAwardAchievement } from "@/lib/gamification/achievements";
 import type { ActionResult } from "@/types/api";
 
 export async function createBudget(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   const auth = await getUser();

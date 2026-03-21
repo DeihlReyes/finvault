@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { updateProfileSchema } from "@/lib/validators/user";
 import type { ActionResult } from "@/types/api";
 
@@ -90,9 +91,12 @@ export async function deleteAccount(): Promise<ActionResult> {
     db.user.delete({ where: { id: userId } }),
   ]);
 
-  // Delete Supabase Auth user (requires service role)
+  // Sign out first, then hard-delete the Auth user via service role
   const supabase = await createClient();
   await supabase.auth.signOut();
+
+  const admin = createAdminClient();
+  await admin.auth.admin.deleteUser(userId);
 
   redirect("/login");
 }

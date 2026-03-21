@@ -1,43 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { getTransactionFormData } from "@/actions/transactions";
+import { TransactionForm } from "@/components/transactions/transaction-form";
+import { Button } from "@/components/ui/button";
+import {
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+} from "@/components/ui/credenza";
+
+type FormData = Awaited<ReturnType<typeof getTransactionFormData>>;
 
 export function FAB() {
   const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState<FormData>(null);
+  const [loading, startLoading] = useTransition();
+
+  function handleOpen(isOpen: boolean) {
+    setOpen(isOpen);
+    if (isOpen && !formData) {
+      startLoading(async () => {
+        const data = await getTransactionFormData();
+        setFormData(data);
+      });
+    }
+  }
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center text-2xl hover:opacity-90 active:scale-95 transition-all"
+      <Button
+        onClick={() => handleOpen(true)}
+        className="md:hidden fixed bottom-20 right-4 z-50 size-14 rounded-full shadow-lg text-2xl"
         aria-label="Add transaction"
       >
         +
-      </button>
+      </Button>
 
-      {/* Sheet placeholder — wired up in Phase 2 */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="absolute bottom-0 inset-x-0 bg-card rounded-t-2xl p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-6" />
-            <p className="text-center text-muted-foreground text-sm">
-              Transaction form coming in Phase 2
-            </p>
-            <button
-              onClick={() => setOpen(false)}
-              className="mt-4 w-full py-2 text-sm text-muted-foreground"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <Credenza open={open} onOpenChange={handleOpen}>
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaTitle>Add Transaction</CredenzaTitle>
+          </CredenzaHeader>
+          <CredenzaBody className="pb-4">
+            {loading && (
+              <div className="space-y-3 animate-pulse">
+                <div className="h-10 bg-secondary rounded-lg" />
+                <div className="h-12 bg-secondary rounded-lg" />
+                <div className="h-10 bg-secondary rounded-lg" />
+                <div className="h-10 bg-secondary rounded-lg" />
+                <div className="h-10 bg-secondary rounded-lg" />
+              </div>
+            )}
+
+            {!loading && formData && (
+              <TransactionForm
+                wallets={formData.wallets}
+                categories={formData.categories}
+                onSuccess={() => setOpen(false)}
+              />
+            )}
+
+            {!loading && !formData && (
+              <p className="text-muted-foreground text-sm text-center py-4">
+                Failed to load. Please try again.
+              </p>
+            )}
+          </CredenzaBody>
+        </CredenzaContent>
+      </Credenza>
     </>
   );
 }

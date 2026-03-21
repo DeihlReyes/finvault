@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Unauthorized() {
   return (
@@ -9,12 +10,9 @@ export default function Unauthorized() {
         <p className="text-muted-foreground text-sm">
           You need to be signed in to access this page.
         </p>
-        <Link
-          href="/login"
-          className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
-        >
-          Sign in
-        </Link>
+        <Button>
+          <Link href="/login">Sign in</Link>
+        </Button>
       </div>
     </div>
   );

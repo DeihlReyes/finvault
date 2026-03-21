@@ -4,9 +4,12 @@ import { useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { signIn, signInWithGoogle } from "@/actions/auth";
+import { signIn } from "@/actions/auth";
 import { loginSchema, type LoginInput } from "@/lib/validators/user";
 import type { ActionResult } from "@/types/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(signIn, null);
@@ -21,43 +24,36 @@ export function LoginForm() {
   return (
     <div className="space-y-5">
       <form action={action} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
             id="email"
             type="email"
             {...register("email")}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
             placeholder="you@example.com"
+            className="h-9 w-full"
           />
           {errors.email && (
-            <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
+            <p className="text-destructive text-xs">{errors.email.message}</p>
           )}
         </div>
 
-        <div>
-          <div className="flex justify-between mb-1">
-            <label htmlFor="password" className="block text-sm font-medium">
-              Password
-            </label>
-            <Link
-              href="/reset-password"
-              className="text-xs text-primary hover:underline"
-            >
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="password">Password</Label>
+            <Link href="/reset-password" className="text-xs text-primary hover:underline">
               Forgot password?
             </Link>
           </div>
-          <input
+          <Input
             id="password"
             type="password"
             {...register("password")}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="••••••••"
+            className="h-9 w-full"
           />
           {errors.password && (
-            <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+            <p className="text-destructive text-xs">{errors.password.message}</p>
           )}
         </div>
 
@@ -67,13 +63,9 @@ export function LoginForm() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-        >
+        <Button type="submit" disabled={pending} className="w-full h-9">
           {pending ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
       </form>
 
       <div className="relative">
@@ -107,10 +99,11 @@ function GoogleSignInButton() {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={handleGoogleSignIn}
-      className="w-full py-2 px-4 border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-2"
+      className="w-full h-9"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden>
         <path
@@ -131,6 +124,6 @@ function GoogleSignInButton() {
         />
       </svg>
       Continue with Google
-    </button>
+    </Button>
   );
 }

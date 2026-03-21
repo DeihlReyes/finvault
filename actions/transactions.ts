@@ -7,12 +7,14 @@ import { transactionSchema } from "@/lib/validators/transaction";
 import { awardXP } from "@/lib/gamification/xp";
 import { evaluateStreak } from "@/lib/gamification/streak";
 import { checkAndAwardAchievement } from "@/lib/gamification/achievements";
+import { incrementChallengeProgress } from "@/lib/challenges/monthly";
+import { notifyUser } from "@/lib/push/notify";
 import type { ActionResult } from "@/types/api";
 
 type BudgetAlert = { categoryId: string; percentage: number };
 
 export async function createTransaction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string; budgetAlerts: BudgetAlert[] }> | null,
   formData: FormData
 ): Promise<ActionResult<{ id: string; budgetAlerts: BudgetAlert[] }>> {
   const auth = await getUser();
@@ -81,9 +83,14 @@ export async function createTransaction(
   });
 
   // Gamification (outside Prisma TX to avoid holding connection)
+  const txDate = data.date;
+  const txMonth = txDate.getMonth() + 1;
+  const txYear = txDate.getFullYear();
+
   await Promise.all([
     awardXP(userId, "TRANSACTION"),
     evaluateStreak(userId),
+    incrementChallengeProgress(userId, txMonth, txYear),
   ]);
   await checkAndAwardAchievement(userId, "FIRST_TRANSACTION");
 
@@ -116,6 +123,16 @@ export async function createTransaction(
 
       if (percentage >= 80) {
         budgetAlerts.push({ categoryId: data.categoryId, percentage });
+        // Fire-and-forget push notification
+        notifyUser(userId, {
+          title: percentage >= 100 ? "Budget exceeded!" : "Budget warning",
+          body:
+            percentage >= 100
+              ? `You've exceeded your budget for this category.`
+              : `You've used ${Math.round(percentage)}% of your budget.`,
+          tag: `budget-${data.categoryId}`,
+          url: "/budgets",
+        }).catch(() => {});
       }
     }
   }
@@ -129,7 +146,7 @@ export async function createTransaction(
 
 export async function updateTransaction(
   id: string,
-  _prev: ActionResult | null,
+  _prev: ActionResult<void> | null,
   formData: FormData
 ): Promise<ActionResult> {
   const auth = await getUser();
@@ -196,4 +213,24 @@ export async function bulkDeleteTransactions(ids: string[]): Promise<ActionResul
   revalidatePath("/transactions");
   revalidatePath("/dashboard");
   return { success: true, data: undefined };
+}
+
+export async function getTransactionFormData() {
+  const auth = await getUser();
+  if (!auth) return null;
+
+  const [wallets, categories] = await Promise.all([
+    db.wallet.findMany({
+      where: { userId: auth.supabaseId, isArchived: false },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, currency: true },
+    }),
+    db.category.findMany({
+      where: { userId: auth.supabaseId, isArchived: false },
+      orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+      select: { id: true, name: true, emoji: true },
+    }),
+  ]);
+
+  return { wallets, categories };
 }

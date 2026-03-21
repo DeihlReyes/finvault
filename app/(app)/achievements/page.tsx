@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import type { AchievementType } from "@/lib/generated/prisma/enums";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata = { title: "Achievements — FinVault" };
 
@@ -25,33 +28,39 @@ async function AchievementsContent() {
     where: { userId: auth.supabaseId },
   });
   const earnedTypes = new Set(earned.map((a) => a.type));
+  const total = Object.keys(ACHIEVEMENT_META).length;
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {earned.length} / {Object.keys(ACHIEVEMENT_META).length} unlocked
+        {earned.length} / {total} unlocked
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(Object.keys(ACHIEVEMENT_META) as AchievementType[]).map((type) => {
           const meta = ACHIEVEMENT_META[type];
           const isEarned = earnedTypes.has(type);
           return (
-            <div
+            <Card
               key={type}
-              className={`bg-card border rounded-xl p-4 flex items-center gap-4 transition-all ${
-                isEarned ? "border-primary/40" : "border-border opacity-60"
-              }`}
+              className={`transition-opacity ${isEarned ? "border-primary/40" : "opacity-50"}`}
             >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                isEarned ? "bg-primary/15" : "bg-secondary"
-              }`}>
-                {isEarned ? meta.emoji : "🔒"}
-              </div>
-              <div>
-                <p className="font-medium text-sm">{meta.label}</p>
-                <p className="text-xs text-muted-foreground">{meta.description}</p>
-              </div>
-            </div>
+              <CardContent className="pt-4 pb-4 flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 ${
+                  isEarned ? "bg-primary/15" : "bg-secondary"
+                }`}>
+                  {isEarned ? meta.emoji : "🔒"}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-sm">{meta.label}</p>
+                    {isEarned && (
+                      <Badge variant="secondary" className="text-xs font-normal">Earned</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{meta.description}</p>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
@@ -63,7 +72,15 @@ export default function AchievementsPage() {
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
       <h2 className="text-xl font-bold">Achievements 🏆</h2>
-      <Suspense fallback={<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{[...Array(8)].map((_, i) => <div key={i} className="h-20 bg-card border border-border rounded-xl animate-pulse" />)}</div>}>
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[...Array(8)].map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
+            ))}
+          </div>
+        }
+      >
         <AchievementsContent />
       </Suspense>
     </div>

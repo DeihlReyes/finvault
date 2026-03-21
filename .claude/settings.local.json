@@ -32,7 +32,18 @@
       "Bash(powershell -Command \"Get-Process -Id 6832 | Select-Object Path\")",
       "Bash(powershell -Command \"Get-Process -Id 10104 | Select-Object Id,ProcessName,Path\")",
       "Bash(powershell -Command \"1..10 | ForEach-Object { \\\\$port = 5430 + \\\\$_; \\\\$used = netstat -ano | Select-String \\\\\":\\\\$port \\\\\"; if \\(-not \\\\$used\\) { Write-Host \\\\\"FREE: \\\\$port\\\\\" } else { Write-Host \\\\\"USED: \\\\$port\\\\\" } }\")",
-      "Bash(grep -A5 '\"\"prisma\"\"' package.json)"
+      "Bash(grep -A5 '\"\"prisma\"\"' package.json)",
+      "Bash(cat app/\\\\\\(app\\\\\\)/budgets/page.tsx)",
+      "Bash(cat app/\\\\\\(app\\\\\\)/settings/page.tsx)",
+      "Bash(grep -v \"^$\")",
+      "Bash(npx next:*)",
+      "Bash(find /c/Users/DEIHL/Desktop/finvault/components -type f -name *.tsx -o -name *.ts)",
+      "Bash(npx:*)",
+      "Bash(grep -E '\"\"vaul\"\"' package.json)",
+      "Bash(npx shadcn:*)",
+      "Bash(ls \"C:/Users/DEIHL/Desktop/finvault/app/\\(app\\)/achievements/\")",
+      "Bash(node -e \"require\\(''''./node_modules/framer-motion/dist/cjs/index.js''''\\)\")",
+      "Bash(git add:*)"
     ]
   }
 }

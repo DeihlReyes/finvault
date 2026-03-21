@@ -1,17 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Rajdhani } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/providers/toast-provider";
+import { SwRegistration } from "@/components/providers/sw-registration";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const rajdhani = Rajdhani({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-rajdhani",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -33,12 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        "dark h-full antialiased",
-        geistSans.variable,
-        geistMono.variable,
-        "font-sans"
-      )}
+      className={cn("dark h-full antialiased", rajdhani.variable, "font-sans")}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -48,6 +40,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
         <Toaster />
+        <SwRegistration />
       </body>
     </html>
   );

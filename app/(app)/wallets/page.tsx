@@ -2,16 +2,21 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
-import { formatCurrency } from "@/lib/utils";
+import { WalletsClient } from "./wallets-client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata = { title: "Wallets — FinVault" };
 
 const WALLET_TYPE_LABELS: Record<string, string> = {
-  CASH: "Cash", BANK: "Bank", EWALLET: "E-Wallet",
-  CREDIT_CARD: "Credit Card", SAVINGS: "Savings", INVESTMENT: "Investment",
+  CASH: "Cash",
+  BANK: "Bank",
+  EWALLET: "E-Wallet",
+  CREDIT_CARD: "Credit Card",
+  SAVINGS: "Savings",
+  INVESTMENT: "Investment",
 };
 
-async function WalletGrid() {
+async function WalletContent() {
   const auth = await getUser();
   if (!auth) redirect("/login");
 
@@ -23,43 +28,37 @@ async function WalletGrid() {
   const totalBalance = wallets.reduce((sum, w) => sum + Number(w.balance), 0);
 
   return (
-    <div className="space-y-4">
-      <div className="bg-card border border-border rounded-xl p-4">
-        <p className="text-sm text-muted-foreground">Total Balance</p>
-        <p className="text-2xl font-bold">{formatCurrency(totalBalance, auth.user.currency)}</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {wallets.map((wallet) => (
-          <div
-            key={wallet.id}
-            className="bg-card border border-border rounded-xl p-5"
-            style={{ borderLeftColor: wallet.color, borderLeftWidth: 4 }}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <p className="font-semibold">{wallet.name}</p>
-                <p className="text-xs text-muted-foreground">{WALLET_TYPE_LABELS[wallet.type]}</p>
-              </div>
-            </div>
-            <p className="text-xl font-bold">{formatCurrency(wallet.balance, wallet.currency)}</p>
-          </div>
-        ))}
-
-        <button className="bg-card border border-dashed border-border rounded-xl p-5 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-          <span className="text-xl">+</span> Add wallet
-        </button>
-      </div>
-    </div>
+    <WalletsClient
+      wallets={wallets.map((w) => ({
+        ...w,
+        balance: Number(w.balance),
+        typeLabel: WALLET_TYPE_LABELS[w.type] ?? w.type,
+      }))}
+      totalBalance={totalBalance}
+      currency={auth.user.currency}
+    />
   );
 }
 
 export default function WalletsPage() {
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
-      <h2 className="text-xl font-bold">Wallets</h2>
-      <Suspense fallback={<div className="h-48 bg-card border border-border rounded-xl animate-pulse" />}>
-        <WalletGrid />
+    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+      <Suspense
+        fallback={
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-7 w-24" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Skeleton className="h-28 w-full rounded-xl" />
+              <Skeleton className="h-28 w-full rounded-xl" />
+            </div>
+          </div>
+        }
+      >
+        <WalletContent />
       </Suspense>
     </div>
   );

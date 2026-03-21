@@ -7,6 +7,9 @@ import Link from "next/link";
 import { signUp } from "@/actions/auth";
 import { signUpSchema, type SignUpInput } from "@/lib/validators/user";
 import type { ActionResult } from "@/types/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export function SignUpForm() {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(signUp, null);
@@ -43,67 +46,62 @@ export function SignUpForm() {
         }}
         className="space-y-4"
       >
-        <div>
-          <label htmlFor="displayName" className="block text-sm font-medium mb-1">
-            Display name <span className="text-muted-foreground">(optional)</span>
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="displayName">
+            Display name{" "}
+            <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Input
             id="displayName"
             type="text"
             {...register("displayName")}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
             placeholder="Your name"
+            className="h-9 w-full"
           />
           {errors.displayName && (
-            <p className="text-destructive text-xs mt-1">{errors.displayName.message}</p>
+            <p className="text-destructive text-xs">{errors.displayName.message}</p>
           )}
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
             id="email"
             type="email"
             {...register("email")}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
             placeholder="you@example.com"
+            className="h-9 w-full"
           />
           {errors.email && (
-            <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
+            <p className="text-destructive text-xs">{errors.email.message}</p>
           )}
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-1">
-            Password
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
             id="password"
             type="password"
             {...register("password")}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Min. 8 characters"
+            className="h-9 w-full"
           />
           {errors.password && (
-            <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+            <p className="text-destructive text-xs">{errors.password.message}</p>
           )}
         </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
-            Confirm password
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Input
             id="confirmPassword"
             type="password"
             {...register("confirmPassword")}
-            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Repeat password"
+            className="h-9 w-full"
           />
           {errors.confirmPassword && (
-            <p className="text-destructive text-xs mt-1">{errors.confirmPassword.message}</p>
+            <p className="text-destructive text-xs">{errors.confirmPassword.message}</p>
           )}
         </div>
 
@@ -113,13 +111,9 @@ export function SignUpForm() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-        >
+        <Button type="submit" disabled={pending} className="w-full h-9">
           {pending ? "Creating account…" : "Create account"}
-        </button>
+        </Button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -9,12 +12,7 @@ export default function NotFound() {
         <p className="text-muted-foreground text-sm">
           The page you&apos;re looking for doesn&apos;t exist.
         </p>
-        <Link
-          href="/dashboard"
-          className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
-        >
-          Back to dashboard
-        </Link>
+        <Link href="/dashboard" className={buttonVariants()}>Back to dashboard</Link>
       </div>
     </div>
   );

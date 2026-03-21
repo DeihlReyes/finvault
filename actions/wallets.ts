@@ -9,7 +9,7 @@ import { checkAndAwardAchievement } from "@/lib/gamification/achievements";
 import type { ActionResult } from "@/types/api";
 
 export async function createWallet(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   const auth = await getUser();
@@ -53,9 +53,9 @@ export async function createWallet(
 
 export async function updateWallet(
   id: string,
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   const auth = await getUser();
   if (!auth) return { success: false, error: "Not authenticated" };
 
@@ -83,7 +83,7 @@ export async function updateWallet(
   });
 
   revalidatePath("/wallets");
-  return { success: true, data: undefined };
+  return { success: true, data: { id } };
 }
 
 export async function archiveWallet(id: string): Promise<ActionResult> {
