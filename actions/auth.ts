@@ -3,11 +3,16 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/types/api";
-import { signUpSchema, loginSchema, resetPasswordSchema, newPasswordSchema } from "@/lib/validators/user";
+import {
+  signUpSchema,
+  loginSchema,
+  resetPasswordSchema,
+  newPasswordSchema,
+} from "@/lib/validators/user";
 
 export async function signUp(
   _prev: ActionResult | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   const raw = {
     email: formData.get("email"),
@@ -21,7 +26,10 @@ export async function signUp(
     return {
       success: false,
       error: "Validation failed",
-      fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: result.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
     };
   }
 
@@ -43,7 +51,7 @@ export async function signUp(
 
 export async function signIn(
   _prev: ActionResult | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   const raw = {
     email: formData.get("email"),
@@ -55,7 +63,10 @@ export async function signIn(
     return {
       success: false,
       error: "Validation failed",
-      fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: result.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
     };
   }
 
@@ -72,7 +83,9 @@ export async function signIn(
   redirect("/dashboard");
 }
 
-export async function signInWithGoogle(): Promise<ActionResult<{ url: string }>> {
+export async function signInWithGoogle(): Promise<
+  ActionResult<{ url: string }>
+> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -82,7 +95,10 @@ export async function signInWithGoogle(): Promise<ActionResult<{ url: string }>>
   });
 
   if (error || !data.url) {
-    return { success: false, error: error?.message ?? "Could not initiate Google sign-in" };
+    return {
+      success: false,
+      error: error?.message ?? "Could not initiate Google sign-in",
+    };
   }
 
   return { success: true, data: { url: data.url } };
@@ -96,7 +112,7 @@ export async function signOut(): Promise<void> {
 
 export async function requestPasswordReset(
   _prev: ActionResult | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   const raw = { email: formData.get("email") };
   const result = resetPasswordSchema.safeParse(raw);
@@ -105,9 +121,12 @@ export async function requestPasswordReset(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(result.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
-  });
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    result.data.email,
+    {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
+    },
+  );
 
   if (error) {
     return { success: false, error: error.message };
@@ -118,7 +137,7 @@ export async function requestPasswordReset(
 
 export async function updatePassword(
   _prev: ActionResult | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   const raw = {
     password: formData.get("password"),
@@ -130,12 +149,17 @@ export async function updatePassword(
     return {
       success: false,
       error: "Validation failed",
-      fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: result.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
     };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password: result.data.password });
+  const { error } = await supabase.auth.updateUser({
+    password: result.data.password,
+  });
 
   if (error) {
     return { success: false, error: error.message };

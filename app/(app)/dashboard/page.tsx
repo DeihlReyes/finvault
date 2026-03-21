@@ -33,6 +33,8 @@ async function DashboardContent() {
   const { user } = auth;
   const userId = auth.supabaseId;
 
+  if (!user.onboardingCompleted) redirect("/onboarding");
+
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
