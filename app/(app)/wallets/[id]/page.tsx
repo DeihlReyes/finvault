@@ -1,67 +1,119 @@
-import { Suspense } from "react";
-import { notFound, redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/get-user";
-import { db } from "@/lib/db";
+"use client";
+
+import { use } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDb } from "@/lib/db";
+import { LOCAL_USER_ID } from "@/lib/db/constants";
+import { wallets, transactions, categories } from "@/lib/db/schema";
+import { and, eq, desc } from "drizzle-orm";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ id: string }> };
 
-async function WalletDetail({ id }: { id: string }) {
-  const auth = await getUser();
-  if (!auth) redirect("/login");
+export default function WalletDetailPage({ params }: Props) {
+  const { id } = use(params);
+  const { db, isReady } = useDb();
 
-  const wallet = await db.wallet.findFirst({
-    where: { id, userId: auth.supabaseId },
+  const walletQ = useQuery({
+    queryKey: ["wallet", id],
+    queryFn: async () => {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(and(eq(wallets.id, id), eq(wallets.userId, LOCAL_USER_ID)))
+        .limit(1);
+      return wallet ?? null;
+    },
+    enabled: isReady,
   });
 
-  if (!wallet) notFound();
-
-  const transactions = await db.transaction.findMany({
-    where: { userId: auth.supabaseId, walletId: id },
-    orderBy: { date: "desc" },
-    take: 30,
-    include: { category: true },
+  const txQ = useQuery({
+    queryKey: ["wallet-transactions", id],
+    queryFn: async () => {
+      return db
+        .select({
+          id: transactions.id,
+          amount: transactions.amount,
+          type: transactions.type,
+          date: transactions.date,
+          note: transactions.note,
+          categoryName: categories.name,
+          categoryEmoji: categories.emoji,
+        })
+        .from(transactions)
+        .leftJoin(categories, eq(transactions.categoryId, categories.id))
+        .where(
+          and(
+            eq(transactions.walletId, id),
+            eq(transactions.userId, LOCAL_USER_ID)
+          )
+        )
+        .orderBy(desc(transactions.date))
+        .limit(30);
+    },
+    enabled: isReady,
   });
+
+  if (walletQ.isLoading) {
+    return (
+      <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!walletQ.data) {
+    notFound();
+  }
+
+  const wallet = walletQ.data;
+  const txList = txQ.data ?? [];
 
   return (
-    <div className="space-y-5">
-      {/* Wallet card */}
-      <Card style={{ borderLeftColor: wallet.color, borderLeftWidth: 4 }}>
+    <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-5">
+      <Card style={{ borderLeftColor: wallet.color ?? undefined, borderLeftWidth: 4 }}>
         <CardContent className="pt-5">
-          <p className="text-sm text-muted-foreground mb-1">{wallet.type.replace("_", " ")}</p>
+          <p className="text-sm text-muted-foreground mb-1">
+            {wallet.type.replace("_", " ")}
+          </p>
           <p className="text-2xl font-bold">{wallet.name}</p>
           <p className="text-3xl font-bold mt-2">
-            {formatCurrency(wallet.balance, wallet.currency)}
+            {formatCurrency(Number(wallet.balance), wallet.currency)}
           </p>
         </CardContent>
       </Card>
 
-      {/* Transactions */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Transactions</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          {transactions.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-4">No transactions yet.</p>
+          {txList.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-4">
+              No transactions yet.
+            </p>
           ) : (
             <div className="space-y-3">
-              {transactions.map((tx, i) => (
+              {txList.map((tx, i) => (
                 <div key={tx.id}>
                   {i > 0 && <Separator className="mb-3" />}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm shrink-0">
-                        {tx.category?.emoji ?? "💳"}
+                        {tx.categoryEmoji ?? "💳"}
                       </div>
                       <div>
                         <p className="text-sm font-medium leading-tight">
-                          {tx.note ?? tx.category?.name ?? "Transaction"}
+                          {tx.note ?? tx.categoryName ?? "Transaction"}
                         </p>
-                        <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(new Date(tx.date))}
+                        </p>
                       </div>
                     </div>
                     <span
@@ -74,7 +126,7 @@ async function WalletDetail({ id }: { id: string }) {
                       }`}
                     >
                       {tx.type === "INCOME" ? "+" : tx.type === "EXPENSE" ? "-" : ""}
-                      {formatCurrency(tx.amount, wallet.currency)}
+                      {formatCurrency(Number(tx.amount), wallet.currency)}
                     </span>
                   </div>
                 </div>
@@ -83,25 +135,6 @@ async function WalletDetail({ id }: { id: string }) {
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-export default async function WalletDetailPage({ params }: Props) {
-  const { id } = await params;
-
-  return (
-    <div className="p-4 md:p-6 max-w-2xl mx-auto">
-      <Suspense
-        fallback={
-          <div className="space-y-4">
-            <Skeleton className="h-32 w-full rounded-xl" />
-            <Skeleton className="h-64 w-full rounded-xl" />
-          </div>
-        }
-      >
-        <WalletDetail id={id} />
-      </Suspense>
     </div>
   );
 }

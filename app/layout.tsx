@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/providers/toast-provider";
 import { SwRegistration } from "@/components/providers/sw-registration";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DbProvider } from "@/lib/db";
+import { QueryProvider } from "@/components/providers/query-provider";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
@@ -44,9 +46,13 @@ export default function RootLayout({
         <meta name="theme-color" content="#6C47FF" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <DbProvider>
+          <QueryProvider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+          </QueryProvider>
+        </DbProvider>
         <Toaster />
         <SwRegistration />
       </body>

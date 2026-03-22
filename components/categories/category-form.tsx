@@ -58,14 +58,9 @@ export function CategoryForm({ onSuccess, editId, initialValues }: Props) {
 
   async function onSubmit(data: CategoryInput) {
     setServerError(null);
-    const fd = new FormData();
-    fd.append("name", data.name);
-    fd.append("emoji", data.emoji);
-    fd.append("color", data.color);
-
     const result = editId
-      ? await updateCategory(editId, null, fd)
-      : await createCategory(null, fd);
+      ? await updateCategory(editId, data as Record<string, unknown>)
+      : await createCategory(data as Record<string, unknown>);
 
     if (result.success) {
       toast.success(editId ? "Category updated!" : "Category created!");

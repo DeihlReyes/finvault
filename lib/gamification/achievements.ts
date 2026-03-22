@@ -1,5 +1,7 @@
-import { db } from "@/lib/db";
-import type { AchievementType } from "@/lib/generated/prisma/enums";
+import { getDb } from "@/lib/db";
+import { achievements } from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
+import type { AchievementType } from "@/lib/db/schema";
 import { awardXP } from "./xp";
 
 /**
@@ -10,20 +12,23 @@ export async function checkAndAwardAchievement(
   userId: string,
   type: AchievementType
 ): Promise<boolean> {
-  const now = new Date();
+  const db = getDb();
 
-  const existing = await db.achievement.findUnique({
-    where: { userId_type: { userId, type } },
+  const existing = await db
+    .select({ id: achievements.id })
+    .from(achievements)
+    .where(and(eq(achievements.userId, userId), eq(achievements.type, type)))
+    .limit(1);
+
+  if (existing.length > 0) return false;
+
+  await db.insert(achievements).values({
+    id: crypto.randomUUID(),
+    userId,
+    type,
+    unlockedAt: new Date(),
   });
 
-  if (existing) return false;
-
-  await db.achievement.create({
-    data: { userId, type, unlockedAt: now },
-  });
-
-  // Award XP for unlocking an achievement
   await awardXP(userId, "ACHIEVEMENT");
-
   return true;
 }

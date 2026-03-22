@@ -1,4 +1,4 @@
-export type { AchievementType, XPAction } from "@/lib/generated/prisma/enums";
+export type { AchievementType, XPAction } from "@/lib/db/schema";
 
 export const XP_AMOUNTS: Record<string, number> = {
   TRANSACTION: 10,

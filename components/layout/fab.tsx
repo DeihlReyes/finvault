@@ -18,7 +18,7 @@ type FormData = Awaited<ReturnType<typeof getTransactionFormData>>;
 
 export function FAB() {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState<FormData>(null);
+  const [formData, setFormData] = useState<FormData | null>(null);
   const [loading, startLoading] = useTransition();
 
   function handleOpen(isOpen: boolean) {

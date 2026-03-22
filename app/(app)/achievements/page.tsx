@@ -1,15 +1,12 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/get-user";
-import { db } from "@/lib/db";
-import type { AchievementType } from "@/lib/generated/prisma/enums";
+"use client";
+
+import { useAchievements, useUser } from "@/lib/hooks/use-db-queries";
+import type { AchievementType } from "@/lib/db/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeatureTip } from "@/components/onboarding/feature-tip";
 import { TIPS } from "@/lib/onboarding/tips";
-
-export const metadata = { title: "Achievements — FinVault" };
 
 const ACHIEVEMENT_META: Record<
   AchievementType,
@@ -57,20 +54,30 @@ const ACHIEVEMENT_META: Record<
   },
 };
 
-async function AchievementsContent() {
-  const auth = await getUser();
-  if (!auth) redirect("/login");
+export default function AchievementsPage() {
+  const { data: earned = [], isLoading } = useAchievements();
+  const { data: user } = useUser();
 
-  const earned = await db.achievement.findMany({
-    where: { userId: auth.supabaseId },
-  });
   const earnedTypes = new Set(earned.map((a) => a.type));
   const total = Object.keys(ACHIEVEMENT_META).length;
+  const seenTips = user?.seenTips ?? [];
 
-  const seenTips = auth.user.seenTips ?? [];
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 mx-auto space-y-4">
+        <h2 className="text-xl font-bold">Achievements 🏆</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-3">
+    <div className="p-4 md:p-6 mx-auto space-y-4">
+      <h2 className="text-xl font-bold">Achievements 🏆</h2>
       <FeatureTip
         tipId={TIPS.ACHIEVEMENTS_PANEL}
         title="Unlock achievements"
@@ -101,10 +108,7 @@ async function AchievementsContent() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium text-sm">{meta.label}</p>
                     {isEarned && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs font-normal"
-                      >
+                      <Badge variant="secondary" className="text-xs font-normal">
                         Earned
                       </Badge>
                     )}
@@ -118,25 +122,6 @@ async function AchievementsContent() {
           );
         })}
       </div>
-    </div>
-  );
-}
-
-export default function AchievementsPage() {
-  return (
-    <div className="p-4 md:p-6  mx-auto space-y-4">
-      <h2 className="text-xl font-bold">Achievements 🏆</h2>
-      <Suspense
-        fallback={
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} className="h-20 w-full rounded-xl" />
-            ))}
-          </div>
-        }
-      >
-        <AchievementsContent />
-      </Suspense>
     </div>
   );
 }

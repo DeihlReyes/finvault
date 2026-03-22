@@ -69,14 +69,7 @@ export function BudgetForm({ categories, onSuccess }: Props) {
 
   async function onSubmit(data: BudgetInput) {
     setServerError(null);
-    const fd = new FormData();
-    fd.append("categoryId", data.categoryId);
-    fd.append("monthlyLimit", String(data.monthlyLimit));
-    fd.append("month", String(data.month));
-    fd.append("year", String(data.year));
-    if (data.rolloverEnabled) fd.append("rolloverEnabled", "true");
-
-    const result = await createBudget(null, fd);
+    const result = await createBudget(data as Record<string, unknown>);
     if (result.success) {
       toast.success("Budget created! +50 XP");
       onSuccess?.();

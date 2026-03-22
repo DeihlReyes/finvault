@@ -1,9 +1,7 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/get-user";
-import { db } from "@/lib/db";
+"use client";
+
+import { useUser, useCategories } from "@/lib/hooks/use-db-queries";
 import { SettingsCategories } from "./settings-categories";
-import { NotificationPreferences } from "@/components/settings/notification-preferences";
 import { DangerZone } from "@/components/settings/danger-zone";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,21 +9,29 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
-export const metadata = { title: "Settings — FinVault" };
+export default function SettingsPage() {
+  const { data: user, isLoading: userLoading } = useUser();
+  const { data: categories = [], isLoading: catsLoading } = useCategories();
 
-async function SettingsContent() {
-  const auth = await getUser();
-  if (!auth) redirect("/login");
+  if (userLoading || catsLoading) {
+    return (
+      <div className="p-4 md:p-6 mx-auto space-y-4">
+        <h2 className="text-xl font-bold">Settings</h2>
+        <div className="space-y-4">
+          <Skeleton className="h-44 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
-  const { user, supabaseId: userId } = auth;
-
-  const categories = await db.category.findMany({
-    where: { userId, isArchived: false },
-    orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-  });
+  if (!user) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6 mx-auto space-y-4">
+      <h2 className="text-xl font-bold">Settings</h2>
+
       {/* Stats */}
       <div className="flex gap-3">
         <Card className="flex-1">
@@ -45,7 +51,7 @@ async function SettingsContent() {
           <CardContent className="pt-4 pb-3 text-center">
             <p className="text-sm font-bold truncate">{user.email}</p>
             <Badge variant="secondary" className="mt-1 text-xs font-normal">
-              Account
+              Local Account
             </Badge>
           </CardContent>
         </Card>
@@ -60,7 +66,7 @@ async function SettingsContent() {
         <CardContent className="pt-0">
           <ProfileForm
             initialValues={{
-              displayName: user.displayName,
+              displayName: user.displayName ?? null,
               currency: user.currency,
               timezone: user.timezone,
             }}
@@ -79,17 +85,6 @@ async function SettingsContent() {
         }))}
       />
 
-      {/* Notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notifications</CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-0">
-          <NotificationPreferences />
-        </CardContent>
-      </Card>
-
       {/* Danger zone */}
       <Card className="border-destructive/40">
         <CardHeader>
@@ -102,25 +97,6 @@ async function SettingsContent() {
           <DangerZone />
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-export default function SettingsPage() {
-  return (
-    <div className="p-4 md:p-6  mx-auto space-y-4">
-      <h2 className="text-xl font-bold">Settings</h2>
-      <Suspense
-        fallback={
-          <div className="space-y-4">
-            <Skeleton className="h-44 w-full rounded-xl" />
-            <Skeleton className="h-64 w-full rounded-xl" />
-            <Skeleton className="h-24 w-full rounded-xl" />
-          </div>
-        }
-      >
-        <SettingsContent />
-      </Suspense>
     </div>
   );
 }

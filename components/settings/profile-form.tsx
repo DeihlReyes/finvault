@@ -72,12 +72,11 @@ export function ProfileForm({ initialValues }: Props) {
 
   async function onSubmit(data: ProfileInput) {
     setServerError(null);
-    const fd = new FormData();
-    if (data.displayName) fd.append("displayName", data.displayName);
-    fd.append("currency", data.currency);
-    fd.append("timezone", data.timezone);
-
-    const result = await updateProfile(null, fd);
+    const result = await updateProfile({
+      displayName: data.displayName || undefined,
+      currency: data.currency,
+      timezone: data.timezone,
+    });
     if (result.success) {
       toast.success("Profile updated!");
       form.reset(data);

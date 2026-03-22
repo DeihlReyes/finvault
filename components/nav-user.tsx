@@ -21,10 +21,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   UnfoldMoreIcon,
   Settings05Icon,
-  LogoutIcon,
 } from "@hugeicons/core-free-icons";
-import { signOut } from "@/actions/auth";
-import { Button } from "./ui/button";
 
 export function NavUser({
   user,
@@ -103,22 +100,9 @@ export function NavUser({
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-              render={
-                <form action={signOut}>
-                  <Button
-                    type="submit"
-                    className="flex w-full items-center gap-2"
-                  >
-                    <HugeiconsIcon icon={LogoutIcon} strokeWidth={2} />
-                    Sign out
-                  </Button>
-                </form>
-              }
-              className="text-destructive focus:text-destructive"
-            >
-              <HugeiconsIcon icon={LogoutIcon} strokeWidth={2} />
-              Sign out
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
+              Manage data
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

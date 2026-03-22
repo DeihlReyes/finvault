@@ -1,13 +1,8 @@
 "use client";
 
-import {
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  startTransition,
-} from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { updateTransaction, deleteTransaction } from "@/actions/transactions";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -35,8 +30,6 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-
-type UpdateResult = ActionResult<void>;
 
 type Transaction = {
   id: string;
@@ -66,41 +59,48 @@ export function TransactionDetailClient({
   currency,
 }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState(tx.type);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const prevState = useRef<UpdateResult | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const boundUpdate = updateTransaction.bind(null, tx.id);
-  const [state, formAction, pending] = useActionState<
-    UpdateResult | null,
-    FormData
-  >(boundUpdate, null);
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const data: Record<string, unknown> = {
+      type,
+      amount: parseFloat(fd.get("amount") as string),
+      walletId: fd.get("walletId"),
+      categoryId: fd.get("categoryId") || undefined,
+      date: new Date(fd.get("date") as string),
+      note: fd.get("note") || undefined,
+    };
+    startTransition(async () => {
+      const result = await updateTransaction(tx.id, data) as ActionResult;
+      if (result.success) {
+        toast.success("Transaction updated!");
+        queryClient.invalidateQueries({ queryKey: ["transaction", tx.id] });
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        setEditing(false);
+      } else {
+        toast.error(result.error ?? "Failed to update");
+      }
+    });
+  }
 
-  useEffect(() => {
-    if (!state || state === prevState.current) return;
-    prevState.current = state;
-    if (state.success) {
-      toast.success("Transaction updated!");
-      startTransition(() => setEditing(false));
-      router.refresh();
-    } else if (state.error) {
-      toast.error(state.error);
-    }
-  }, [state, router]);
-
-  async function handleDelete() {
-    setDeleting(true);
-    const result = await deleteTransaction(tx.id);
-    setDeleting(false);
-    setConfirmDelete(false);
-    if (result.success) {
-      toast.success("Transaction deleted");
-      router.push("/transactions");
-    } else {
-      toast.error(result.error);
-    }
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteTransaction(tx.id);
+      setConfirmDelete(false);
+      if (result.success) {
+        toast.success("Transaction deleted");
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        router.push("/transactions");
+      } else {
+        toast.error(result.error);
+      }
+    });
   }
 
   if (!editing) {
@@ -118,10 +118,10 @@ export function TransactionDetailClient({
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
-                disabled={deleting}
+                disabled={isPending}
                 onClick={handleDelete}
               >
-                {deleting ? "Deleting…" : "Delete"}
+                {isPending ? "Deleting…" : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -202,9 +202,7 @@ export function TransactionDetailClient({
 
       <Card>
         <CardContent className="pt-5">
-          <form action={formAction} className="space-y-4">
-            <input type="hidden" name="type" value={type} />
-
+          <form onSubmit={handleUpdate} className="space-y-4">
             {/* Type */}
             <Tabs value={type} onValueChange={(v) => setType(v as typeof type)}>
               <TabsList className="w-full">
@@ -290,12 +288,8 @@ export function TransactionDetailClient({
               />
             </div>
 
-            {state && !state.success && state.error && (
-              <p className="text-destructive text-sm">{state.error}</p>
-            )}
-
-            <Button type="submit" disabled={pending} className="w-full h-10">
-              {pending ? "Saving…" : "Save Changes"}
+            <Button type="submit" disabled={isPending} className="w-full h-10">
+              {isPending ? "Saving…" : "Save Changes"}
             </Button>
           </form>
         </CardContent>

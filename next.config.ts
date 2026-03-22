@@ -31,17 +31,20 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts + Supabase
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Next.js inline scripts + PGlite WASM
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'",
               // Inline styles from Tailwind + shadcn
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              // Supabase auth + storage, web-push VAPID
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co"} wss://*.supabase.co https://fcm.googleapis.com`,
+              "connect-src 'self'",
               "img-src 'self' data: blob: https:",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
             ].join("; "),
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
           },
         ],
       },

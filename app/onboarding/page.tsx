@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { completeOnboarding } from "@/actions/user";
 import { createWallet } from "@/actions/wallets";
@@ -49,6 +50,7 @@ const stepVariants = {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [displayName, setDisplayName] = useState("");
@@ -71,13 +73,14 @@ export default function OnboardingPage() {
   async function handleFinish(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const fd = new FormData();
-      fd.set("name", walletName);
-      fd.set("type", walletType);
-      fd.set("balance", walletBalance);
-      fd.set("currency", currency);
-      await createWallet(null, fd);
+      await createWallet({
+        name: walletName,
+        type: walletType,
+        balance: parseFloat(walletBalance) || 0,
+        currency,
+      });
       await completeOnboarding({ displayName, currency });
+      await queryClient.refetchQueries({ queryKey: ["user"] });
       router.push("/dashboard");
     });
   }
@@ -88,6 +91,7 @@ export default function OnboardingPage() {
         displayName: displayName || "there",
         currency,
       });
+      await queryClient.refetchQueries({ queryKey: ["user"] });
       router.push("/dashboard");
     });
   }

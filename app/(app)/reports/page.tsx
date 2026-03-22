@@ -1,7 +1,13 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/get-user";
-import { db } from "@/lib/db";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { useDb } from "@/lib/db";
+import { LOCAL_USER_ID } from "@/lib/db/constants";
+import { transactions, categories, netWorthSnapshots } from "@/lib/db/schema";
+import { and, eq, gte, lt, desc } from "drizzle-orm";
+import { sum } from "drizzle-orm";
+import { useUser } from "@/lib/hooks/use-db-queries";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,376 +17,235 @@ import { ReportsControls } from "@/components/reports/reports-controls";
 import { ExportButtons } from "@/components/reports/export-buttons";
 
 const ExpenseDonutChart = dynamic(
-  () => import("@/components/reports/expense-donut-chart").then((m) => m.ExpenseDonutChart),
-  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> },
+  () =>
+    import("@/components/reports/expense-donut-chart").then(
+      (m) => m.ExpenseDonutChart
+    ),
+  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> }
 );
 const IncomeExpenseBarChart = dynamic(
-  () => import("@/components/reports/income-expense-bar-chart").then((m) => m.IncomeExpenseBarChart),
-  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> },
+  () =>
+    import("@/components/reports/income-expense-bar-chart").then(
+      (m) => m.IncomeExpenseBarChart
+    ),
+  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> }
 );
 const NetWorthLineChart = dynamic(
-  () => import("@/components/reports/net-worth-line-chart").then((m) => m.NetWorthLineChart),
-  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> },
+  () =>
+    import("@/components/reports/net-worth-line-chart").then(
+      (m) => m.NetWorthLineChart
+    ),
+  { loading: () => <Skeleton className="h-64 w-full rounded-xl" /> }
 );
 
-export const metadata = { title: "Reports — FinVault" };
+const MONTH_LABELS = [
+  "Jan","Feb","Mar","Apr","May","Jun",
+  "Jul","Aug","Sep","Oct","Nov","Dec",
+];
 
-type SearchParams = Promise<{
-  tab?: string;
-  month?: string;
-  year?: string;
-}>;
+export default function ReportsPage() {
+  const searchParams = useSearchParams();
+  const now = new Date();
+  const tab = searchParams.get("tab") ?? "overview";
+  const month = searchParams.get("month")
+    ? parseInt(searchParams.get("month")!)
+    : now.getMonth() + 1;
+  const year = searchParams.get("year")
+    ? parseInt(searchParams.get("year")!)
+    : now.getFullYear();
 
-// ── Overview Tab ────────────────────────────────────────────────────────────
-
-async function OverviewContent({
-  userId,
-  currency,
-  from,
-  to,
-}: {
-  userId: string;
-  currency: string;
-  from: Date;
-  to: Date;
-}) {
-  const [totalIncome, totalExpenses, byCategory] = await Promise.all([
-    db.transaction.aggregate({
-      where: { userId, type: "INCOME", date: { gte: from, lt: to } },
-      _sum: { amount: true },
-    }),
-    db.transaction.aggregate({
-      where: { userId, type: "EXPENSE", date: { gte: from, lt: to } },
-      _sum: { amount: true },
-    }),
-    db.transaction.groupBy({
-      by: ["categoryId"],
-      where: { userId, type: "EXPENSE", date: { gte: from, lt: to } },
-      _sum: { amount: true },
-      orderBy: { _sum: { amount: "desc" } },
-      take: 5,
-    }),
-  ]);
-
-  const categories = await db.category.findMany({
-    where: { id: { in: byCategory.map((b) => b.categoryId!).filter(Boolean) } },
-  });
-  const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));
-
-  const income = Number(totalIncome._sum.amount ?? 0);
-  const expenses = Number(totalExpenses._sum.amount ?? 0);
-  const net = income - expenses;
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground mb-1">Income</p>
-            <p className="text-base font-bold text-[oklch(0.65_0.15_145)]">
-              {formatCurrency(income, currency)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground mb-1">Expenses</p>
-            <p className="text-base font-bold text-destructive">
-              {formatCurrency(expenses, currency)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground mb-1">Saved</p>
-            <p
-              className={`text-base font-bold ${net >= 0 ? "text-[oklch(0.65_0.15_145)]" : "text-destructive"}`}
-            >
-              {formatCurrency(net, currency)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Top Spending</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {byCategory.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-4">
-              No expense data for this period
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {byCategory.map((entry, i) => {
-                const cat = catMap[entry.categoryId!];
-                const amount = Number(entry._sum.amount ?? 0);
-                const pct = expenses > 0 ? (amount / expenses) * 100 : 0;
-                return (
-                  <div key={entry.categoryId}>
-                    {i > 0 && <Separator className="mb-3" />}
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span>
-                        {cat?.emoji} {cat?.name ?? "Unknown"}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {formatCurrency(amount, currency)}{" "}
-                        <span className="text-xs">({Math.round(pct)}%)</span>
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ── Categories Tab ───────────────────────────────────────────────────────────
-
-async function CategoriesContent({
-  userId,
-  currency,
-  from,
-  to,
-}: {
-  userId: string;
-  currency: string;
-  from: Date;
-  to: Date;
-}) {
-  const byCategory = await db.transaction.groupBy({
-    by: ["categoryId"],
-    where: { userId, type: "EXPENSE", date: { gte: from, lt: to } },
-    _sum: { amount: true },
-    orderBy: { _sum: { amount: "desc" } },
-  });
-
-  const categories = await db.category.findMany({
-    where: { id: { in: byCategory.map((b) => b.categoryId!).filter(Boolean) } },
-  });
-  const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));
-
-  const chartData = byCategory.map((entry) => {
-    const cat = catMap[entry.categoryId!];
-    return {
-      name: cat?.name ?? "Unknown",
-      value: Number(entry._sum.amount ?? 0),
-      emoji: cat?.emoji ?? "💳",
-      color: cat?.color ?? "#6C47FF",
-    };
-  });
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Expenses by Category</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <ExpenseDonutChart data={chartData} currency={currency} />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── Trends Tab ───────────────────────────────────────────────────────────────
-
-async function TrendsContent({
-  userId,
-  currency,
-  currentMonth,
-  currentYear,
-}: {
-  userId: string;
-  currency: string;
-  currentMonth: number;
-  currentYear: number;
-}) {
-  // Build last 6 months
-  const months: Array<{ year: number; month: number; label: string }> = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(currentYear, currentMonth - 1 - i, 1);
-    const MONTH_LABELS = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    months.push({
-      year: d.getFullYear(),
-      month: d.getMonth() + 1,
-      label: `${MONTH_LABELS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
-    });
-  }
-
-  // 2 queries for the full 6-month range instead of 12 per-month queries
-  const rangeFrom = new Date(months[0].year, months[0].month - 1, 1);
-  const rangeTo = new Date(currentYear, currentMonth, 1);
-  const [incomeRows, expenseRows] = await Promise.all([
-    db.transaction.findMany({
-      where: { userId, type: "INCOME", date: { gte: rangeFrom, lt: rangeTo } },
-      select: { amount: true, date: true },
-    }),
-    db.transaction.findMany({
-      where: { userId, type: "EXPENSE", date: { gte: rangeFrom, lt: rangeTo } },
-      select: { amount: true, date: true },
-    }),
-  ]);
-  const data = months.map(({ year, month, label }) => {
-    const mStart = new Date(year, month - 1, 1).getTime();
-    const mEnd = new Date(year, month, 1).getTime();
-    const income = incomeRows
-      .filter((r) => r.date.getTime() >= mStart && r.date.getTime() < mEnd)
-      .reduce((sum, r) => sum + Number(r.amount), 0);
-    const expenses = expenseRows
-      .filter((r) => r.date.getTime() >= mStart && r.date.getTime() < mEnd)
-      .reduce((sum, r) => sum + Number(r.amount), 0);
-    return { label, income, expenses };
-  });
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">
-          Income vs Expenses (6 months)
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <IncomeExpenseBarChart data={data} currency={currency} />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── Net Worth Tab ─────────────────────────────────────────────────────────────
-
-async function NetWorthContent({
-  userId,
-  currency,
-}: {
-  userId: string;
-  currency: string;
-}) {
-  const snapshots = await db.netWorthSnapshot.findMany({
-    where: { userId },
-    orderBy: { date: "asc" },
-    take: 90,
-  });
-
-  const MONTH_LABELS = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const chartData = snapshots.map((s) => ({
-    label: `${MONTH_LABELS[s.date.getMonth()]} ${s.date.getDate()}`,
-    value: Number(s.totalValue),
-  }));
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Net Worth History</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <NetWorthLineChart data={chartData} currency={currency} />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-async function ReportsContent({
-  tab,
-  month,
-  year,
-}: {
-  tab: string;
-  month: number;
-  year: number;
-}) {
-  const auth = await getUser();
-  if (!auth) redirect("/login");
-
-  const { supabaseId: userId, user } = auth;
+  const { db, isReady } = useDb();
+  const { data: user } = useUser();
+  const currency = user?.currency ?? "USD";
   const from = new Date(year, month - 1, 1);
   const to = new Date(year, month, 1);
 
+  const overviewQ = useQuery({
+    queryKey: ["reports-overview", month, year],
+    queryFn: async () => {
+      const [incomeRow, expenseRow, byCatRows] = await Promise.all([
+        db
+          .select({ total: sum(transactions.amount) })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, LOCAL_USER_ID),
+              eq(transactions.type, "INCOME"),
+              gte(transactions.date, from),
+              lt(transactions.date, to)
+            )
+          ),
+        db
+          .select({ total: sum(transactions.amount) })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, LOCAL_USER_ID),
+              eq(transactions.type, "EXPENSE"),
+              gte(transactions.date, from),
+              lt(transactions.date, to)
+            )
+          ),
+        db
+          .select({
+            categoryId: transactions.categoryId,
+            total: sum(transactions.amount),
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, LOCAL_USER_ID),
+              eq(transactions.type, "EXPENSE"),
+              gte(transactions.date, from),
+              lt(transactions.date, to)
+            )
+          )
+          .groupBy(transactions.categoryId)
+          .orderBy(desc(sum(transactions.amount)))
+          .limit(5),
+      ]);
+
+      const catIds = byCatRows
+        .map((r) => r.categoryId)
+        .filter(Boolean) as string[];
+      const cats =
+        catIds.length > 0
+          ? await db
+              .select()
+              .from(categories)
+              .where(eq(categories.userId, LOCAL_USER_ID))
+          : [];
+      const catMap = Object.fromEntries(cats.map((c) => [c.id, c]));
+
+      return {
+        income: Number(incomeRow[0]?.total ?? 0),
+        expenses: Number(expenseRow[0]?.total ?? 0),
+        byCategory: byCatRows.map((r) => ({
+          categoryId: r.categoryId,
+          amount: Number(r.total ?? 0),
+          cat: catMap[r.categoryId ?? ""],
+        })),
+      };
+    },
+    enabled: isReady && tab === "overview",
+  });
+
+  const categoryQ = useQuery({
+    queryKey: ["reports-categories", month, year],
+    queryFn: async () => {
+      const rows = await db
+        .select({
+          categoryId: transactions.categoryId,
+          total: sum(transactions.amount),
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, LOCAL_USER_ID),
+            eq(transactions.type, "EXPENSE"),
+            gte(transactions.date, from),
+            lt(transactions.date, to)
+          )
+        )
+        .groupBy(transactions.categoryId)
+        .orderBy(desc(sum(transactions.amount)));
+
+      const cats = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.userId, LOCAL_USER_ID));
+      const catMap = Object.fromEntries(cats.map((c) => [c.id, c]));
+
+      return rows.map((r) => ({
+        name: catMap[r.categoryId ?? ""]?.name ?? "Unknown",
+        value: Number(r.total ?? 0),
+        emoji: catMap[r.categoryId ?? ""]?.emoji ?? "💳",
+        color: catMap[r.categoryId ?? ""]?.color ?? "#6C47FF",
+      }));
+    },
+    enabled: isReady && tab === "categories",
+  });
+
+  const trendsQ = useQuery({
+    queryKey: ["reports-trends", month, year],
+    queryFn: async () => {
+      const months: Array<{ year: number; month: number; label: string }> = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(year, month - 1 - i, 1);
+        months.push({
+          year: d.getFullYear(),
+          month: d.getMonth() + 1,
+          label: `${MONTH_LABELS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+        });
+      }
+      const rangeFrom = new Date(months[0].year, months[0].month - 1, 1);
+      const rangeTo = new Date(year, month, 1);
+      const [incomeRows, expenseRows] = await Promise.all([
+        db
+          .select({ amount: transactions.amount, date: transactions.date })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, LOCAL_USER_ID),
+              eq(transactions.type, "INCOME"),
+              gte(transactions.date, rangeFrom),
+              lt(transactions.date, rangeTo)
+            )
+          ),
+        db
+          .select({ amount: transactions.amount, date: transactions.date })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, LOCAL_USER_ID),
+              eq(transactions.type, "EXPENSE"),
+              gte(transactions.date, rangeFrom),
+              lt(transactions.date, rangeTo)
+            )
+          ),
+      ]);
+      return months.map(({ year: y, month: m, label }) => {
+        const mStart = new Date(y, m - 1, 1).getTime();
+        const mEnd = new Date(y, m, 1).getTime();
+        const inc = incomeRows
+          .filter(
+            (r) =>
+              new Date(r.date).getTime() >= mStart &&
+              new Date(r.date).getTime() < mEnd
+          )
+          .reduce((s, r) => s + Number(r.amount), 0);
+        const exp = expenseRows
+          .filter(
+            (r) =>
+              new Date(r.date).getTime() >= mStart &&
+              new Date(r.date).getTime() < mEnd
+          )
+          .reduce((s, r) => s + Number(r.amount), 0);
+        return { label, income: inc, expenses: exp };
+      });
+    },
+    enabled: isReady && tab === "trends",
+  });
+
+  const networthQ = useQuery({
+    queryKey: ["reports-networth"],
+    queryFn: async () => {
+      const snaps = await db
+        .select()
+        .from(netWorthSnapshots)
+        .where(eq(netWorthSnapshots.userId, LOCAL_USER_ID))
+        .orderBy(netWorthSnapshots.date)
+        .limit(90);
+      return snaps.map((s) => ({
+        label: `${MONTH_LABELS[new Date(s.date).getMonth()]} ${new Date(s.date).getDate()}`,
+        value: Number(s.totalValue),
+      }));
+    },
+    enabled: isReady && tab === "networth",
+  });
+
   return (
-    <>
-      {tab === "overview" && (
-        <OverviewContent
-          userId={userId}
-          currency={user.currency}
-          from={from}
-          to={to}
-        />
-      )}
-      {tab === "categories" && (
-        <CategoriesContent
-          userId={userId}
-          currency={user.currency}
-          from={from}
-          to={to}
-        />
-      )}
-      {tab === "trends" && (
-        <TrendsContent
-          userId={userId}
-          currency={user.currency}
-          currentMonth={month}
-          currentYear={year}
-        />
-      )}
-      {tab === "networth" && (
-        <NetWorthContent userId={userId} currency={user.currency} />
-      )}
-    </>
-  );
-}
-
-export default async function ReportsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const params = await searchParams;
-
-  const now = new Date();
-  const tab = params.tab ?? "overview";
-  const month = params.month ? parseInt(params.month) : now.getMonth() + 1;
-  const year = params.year ? parseInt(params.year) : now.getFullYear();
-
-  return (
-    <div className="p-4 md:p-6  mx-auto space-y-4">
+    <div className="p-4 md:p-6 mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Reports</h2>
         <ExportButtons month={month} year={year} />
@@ -388,16 +253,153 @@ export default async function ReportsPage({
 
       <ReportsControls tab={tab} month={month} year={year} />
 
-      <Suspense
-        fallback={
-          <div className="space-y-4">
-            <Skeleton className="h-24 w-full rounded-xl" />
-            <Skeleton className="h-72 w-full rounded-xl" />
-          </div>
-        }
-      >
-        <ReportsContent tab={tab} month={month} year={year} />
-      </Suspense>
+      {tab === "overview" && (
+        <>
+          {overviewQ.isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="h-72 w-full rounded-xl" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="pt-4 pb-4">
+                    <p className="text-xs text-muted-foreground mb-1">Income</p>
+                    <p className="text-base font-bold text-[oklch(0.65_0.15_145)]">
+                      {formatCurrency(overviewQ.data?.income ?? 0, currency)}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Expenses
+                    </p>
+                    <p className="text-base font-bold text-destructive">
+                      {formatCurrency(overviewQ.data?.expenses ?? 0, currency)}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4">
+                    <p className="text-xs text-muted-foreground mb-1">Saved</p>
+                    <p
+                      className={`text-base font-bold ${(overviewQ.data?.income ?? 0) - (overviewQ.data?.expenses ?? 0) >= 0 ? "text-[oklch(0.65_0.15_145)]" : "text-destructive"}`}
+                    >
+                      {formatCurrency(
+                        (overviewQ.data?.income ?? 0) -
+                          (overviewQ.data?.expenses ?? 0),
+                        currency
+                      )}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Top Spending</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {(overviewQ.data?.byCategory ?? []).length === 0 ? (
+                    <p className="text-muted-foreground text-sm text-center py-4">
+                      No expense data for this period
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {overviewQ.data?.byCategory.map((entry, i) => {
+                        const pct =
+                          (overviewQ.data?.expenses ?? 0) > 0
+                            ? (entry.amount / (overviewQ.data?.expenses ?? 1)) *
+                              100
+                            : 0;
+                        return (
+                          <div key={entry.categoryId ?? i}>
+                            {i > 0 && <Separator className="mb-3" />}
+                            <div className="flex justify-between text-sm mb-1.5">
+                              <span>
+                                {entry.cat?.emoji} {entry.cat?.name ?? "Unknown"}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {formatCurrency(entry.amount, currency)}{" "}
+                                <span className="text-xs">
+                                  ({Math.round(pct)}%)
+                                </span>
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full transition-all"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "categories" && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Expenses by Category</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {categoryQ.isLoading ? (
+              <Skeleton className="h-64 w-full rounded-xl" />
+            ) : (
+              <ExpenseDonutChart
+                data={categoryQ.data ?? []}
+                currency={currency}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "trends" && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              Income vs Expenses (6 months)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {trendsQ.isLoading ? (
+              <Skeleton className="h-64 w-full rounded-xl" />
+            ) : (
+              <IncomeExpenseBarChart
+                data={trendsQ.data ?? []}
+                currency={currency}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "networth" && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Net Worth History</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {networthQ.isLoading ? (
+              <Skeleton className="h-64 w-full rounded-xl" />
+            ) : (
+              <NetWorthLineChart
+                data={networthQ.data ?? []}
+                currency={currency}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

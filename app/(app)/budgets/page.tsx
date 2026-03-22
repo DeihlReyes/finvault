@@ -1,70 +1,100 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/get-user";
-import { db } from "@/lib/db";
+"use client";
+
+import { useMemo } from "react";
+import {
+  useBudgets,
+  useCategories,
+  useUser,
+} from "@/lib/hooks/use-db-queries";
+import { useQuery } from "@tanstack/react-query";
+import { useDb } from "@/lib/db";
+import { LOCAL_USER_ID } from "@/lib/db/constants";
+import { transactions } from "@/lib/db/schema";
+import { and, eq, gte, lt } from "drizzle-orm";
+import { sum } from "drizzle-orm";
 import { BudgetsClient } from "./budgets-client";
 import { FeatureTip } from "@/components/onboarding/feature-tip";
 import { TIPS } from "@/lib/onboarding/tips";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const metadata = { title: "Budgets — FinVault" };
-
-async function BudgetContent() {
-  const auth = await getUser();
-  if (!auth) redirect("/login");
-
+export default function BudgetsPage() {
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
-  const userId = auth.supabaseId;
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 1);
 
-  const [budgets, categories] = await Promise.all([
-    db.budget.findMany({
-      where: { userId, month, year },
-      include: { category: true },
-    }),
-    db.category.findMany({
-      where: { userId, isArchived: false },
-      orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-      select: { id: true, name: true, emoji: true },
-    }),
-  ]);
-
-  const budgetCategoryIds = budgets.map((b) => b.categoryId);
-  const spendRows = budgetCategoryIds.length > 0
-    ? await db.transaction.groupBy({
-        by: ["categoryId"],
-        where: {
-          userId,
-          categoryId: { in: budgetCategoryIds },
-          type: "EXPENSE",
-          date: { gte: new Date(year, month - 1, 1), lt: new Date(year, month, 1) },
-        },
-        _sum: { amount: true },
-      })
-    : [];
-  const spendMap = Object.fromEntries(
-    spendRows.map((r) => [r.categoryId!, Number(r._sum.amount ?? 0)]),
+  const { db, isReady } = useDb();
+  const { data: budgets = [], isLoading: budgetsLoading } = useBudgets(
+    month,
+    year
   );
-  const budgetsWithSpend = budgets.map((budget) => {
-    const spent = spendMap[budget.categoryId] ?? 0;
-    const limit = Number(budget.monthlyLimit);
-    const percentage = limit > 0 ? (spent / limit) * 100 : 0;
-    return {
-      id: budget.id,
-      categoryId: budget.categoryId,
-      categoryName: budget.category.name,
-      categoryEmoji: budget.category.emoji,
-      monthlyLimit: limit,
-      spent,
-      percentage,
-    };
+  const { data: categories = [], isLoading: catsLoading } = useCategories();
+  const { data: user } = useUser();
+
+  const categoryIds = budgets.map((b) => b.categoryId);
+
+  const { data: spendMap = {} } = useQuery({
+    queryKey: ["budgetSpend", month, year],
+    queryFn: async () => {
+      if (categoryIds.length === 0) return {};
+      const rows = await db
+        .select({
+          categoryId: transactions.categoryId,
+          total: sum(transactions.amount),
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, LOCAL_USER_ID),
+            eq(transactions.type, "EXPENSE"),
+            gte(transactions.date, monthStart),
+            lt(transactions.date, monthEnd)
+          )
+        )
+        .groupBy(transactions.categoryId);
+      return Object.fromEntries(
+        rows.map((r) => [r.categoryId ?? "", Number(r.total ?? 0)])
+      );
+    },
+    enabled: isReady && categoryIds.length > 0,
   });
 
-  const seenTips = auth.user.seenTips ?? [];
+  const budgetsWithSpend = useMemo(
+    () =>
+      budgets.map((budget) => {
+        const spent = spendMap[budget.categoryId] ?? 0;
+        const limit = Number(budget.monthlyLimit);
+        return {
+          id: budget.id,
+          categoryId: budget.categoryId,
+          categoryName: budget.categoryName,
+          categoryEmoji: budget.categoryEmoji,
+          monthlyLimit: limit,
+          spent,
+          percentage: limit > 0 ? (spent / limit) * 100 : 0,
+        };
+      }),
+    [budgets, spendMap]
+  );
+
+  if (budgetsLoading || catsLoading) {
+    return (
+      <div className="p-4 md:p-6 mx-auto">
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const seenTips = user?.seenTips ?? [];
 
   return (
-    <>
+    <div className="p-4 md:p-6 mx-auto">
       {budgets.length === 0 && (
         <FeatureTip
           tipId={TIPS.BUDGETS_FIRST}
@@ -75,28 +105,13 @@ async function BudgetContent() {
       )}
       <BudgetsClient
         budgets={budgetsWithSpend}
-        categories={categories}
-        currency={auth.user.currency}
+        categories={categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          emoji: c.emoji,
+        }))}
+        currency={user?.currency ?? "USD"}
       />
-    </>
-  );
-}
-
-export default function BudgetsPage() {
-  return (
-    <div className="p-4 md:p-6  mx-auto">
-      <Suspense
-        fallback={
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-20 w-full rounded-xl" />
-            <Skeleton className="h-20 w-full rounded-xl" />
-            <Skeleton className="h-20 w-full rounded-xl" />
-          </div>
-        }
-      >
-        <BudgetContent />
-      </Suspense>
     </div>
   );
 }

@@ -1,84 +1,85 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/get-user";
-import { db } from "@/lib/db";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import {
+  useTransactions,
+  useWallets,
+  useCategories,
+  useUser,
+} from "@/lib/hooks/use-db-queries";
 import { TransactionsHeader } from "./transactions-header";
 import { TransactionItem } from "@/components/transactions/transaction-item";
-import type { TransactionType } from "@/lib/generated/prisma/enums";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { TransactionType } from "@/lib/db/schema";
 
-export const metadata = { title: "Transactions — FinVault" };
-
-type SearchParams = Promise<{
-  type?: string;
-  month?: string;
-  year?: string;
-  wallet?: string;
-  category?: string;
-}>;
-
-async function TransactionList({
-  searchParams,
-}: {
-  searchParams: Awaited<SearchParams>;
-}) {
-  const auth = await getUser();
-  if (!auth) redirect("/login");
-
-  const { type, month, year, wallet, category } = searchParams;
-  const { user, supabaseId: userId } = auth;
-
+export default function TransactionsPage() {
+  const searchParams = useSearchParams();
   const now = new Date();
-  const filterMonth = month ? parseInt(month) : now.getMonth() + 1;
-  const filterYear = year ? parseInt(year) : now.getFullYear();
 
-  const [transactions, wallets, categories] = await Promise.all([
-    db.transaction.findMany({
-      where: {
-        userId,
-        ...(type && { type: type as TransactionType }),
-        ...(wallet && { walletId: wallet }),
-        ...(category && { categoryId: category }),
-        date: {
-          gte: new Date(filterYear, filterMonth - 1, 1),
-          lt: new Date(filterYear, filterMonth, 1),
-        },
-      },
-      orderBy: { date: "desc" },
-      take: 200,
-      include: { category: true, wallet: true },
-    }),
-    db.wallet.findMany({
-      where: { userId, isArchived: false },
-      select: { id: true, name: true, currency: true },
-    }),
-    db.category.findMany({
-      where: { userId, isArchived: false },
-      select: { id: true, name: true, emoji: true },
-    }),
-  ]);
+  const type = searchParams.get("type") as TransactionType | undefined;
+  const month = searchParams.get("month")
+    ? parseInt(searchParams.get("month")!)
+    : now.getMonth() + 1;
+  const year = searchParams.get("year")
+    ? parseInt(searchParams.get("year")!)
+    : now.getFullYear();
+  const walletId = searchParams.get("wallet") ?? undefined;
+  const categoryId = searchParams.get("category") ?? undefined;
+
+  const { data: txList = [], isLoading: txLoading } = useTransactions({
+    month,
+    year,
+    type: type ?? undefined,
+    walletId,
+    categoryId,
+  });
+  const { data: wallets = [] } = useWallets();
+  const { data: categories = [] } = useCategories();
+  const { data: user } = useUser();
+
+  if (txLoading) {
+    return (
+      <div className="p-4 md:p-6 mx-auto space-y-4">
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-8 w-full rounded-lg" />
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="p-4 md:p-6 mx-auto space-y-4">
       <TransactionsHeader
-        wallets={wallets}
-        categories={categories}
+        wallets={wallets.map((w) => ({
+          id: w.id,
+          name: w.name,
+          currency: w.currency,
+        }))}
+        categories={categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          emoji: c.emoji,
+        }))}
         current={{
-          type,
-          month: filterMonth,
-          year: filterYear,
-          wallet,
-          category,
+          type: type ?? undefined,
+          month,
+          year,
+          wallet: walletId,
+          category: categoryId,
         }}
       />
       <div className="space-y-2">
-        {transactions.length === 0 ? (
+        {txList.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-4xl mb-3">📭</p>
             <p className="text-sm">No transactions for this period</p>
           </div>
         ) : (
-          transactions.map((tx) => (
+          txList.map((tx) => (
             <TransactionItem
               key={tx.id}
               id={tx.id}
@@ -87,42 +88,16 @@ async function TransactionList({
               note={tx.note}
               date={tx.date}
               category={
-                tx.category
-                  ? { name: tx.category.name, emoji: tx.category.emoji }
+                tx.categoryName
+                  ? { name: tx.categoryName, emoji: tx.categoryEmoji ?? "💳" }
                   : null
               }
-              walletName={tx.wallet.name}
-              currency={user.currency}
+              walletName={tx.walletName ?? ""}
+              currency={user?.currency ?? "USD"}
             />
           ))
         )}
       </div>
-    </>
-  );
-}
-
-export default async function TransactionsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const params = await searchParams;
-
-  return (
-    <div className="p-4 md:p-6  mx-auto space-y-4">
-      <Suspense
-        fallback={
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-full rounded-lg" />
-            <Skeleton className="h-8 w-full rounded-lg" />
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full rounded-xl" />
-            ))}
-          </div>
-        }
-      >
-        <TransactionList searchParams={params} />
-      </Suspense>
     </div>
   );
 }

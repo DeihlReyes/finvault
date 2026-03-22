@@ -61,17 +61,7 @@ export function TransactionForm({ wallets, categories, onSuccess }: Props) {
 
   async function onSubmit(data: TransactionInput) {
     setServerError(null);
-    const fd = new FormData();
-    fd.append("type", data.type);
-    fd.append("walletId", data.walletId);
-    fd.append("amount", String(data.amount));
-    fd.append("date", data.date.toISOString());
-    if (data.destinationWalletId)
-      fd.append("destinationWalletId", data.destinationWalletId);
-    if (data.categoryId) fd.append("categoryId", data.categoryId);
-    if (data.note) fd.append("note", data.note);
-
-    const result = await createTransaction(null, fd);
+    const result = await createTransaction(data as Record<string, unknown>);
     if (result.success && result.data) {
       const alerts: BudgetAlert[] = result.data.budgetAlerts ?? [];
       toast.success("Transaction added! +10 XP");

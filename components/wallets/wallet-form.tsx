@@ -75,17 +75,10 @@ export function WalletForm({ defaultCurrency = "USD", onSuccess, editId, initial
 
   async function onSubmit(data: WalletInput) {
     setServerError(null);
-    const fd = new FormData();
-    fd.append("name", data.name);
-    fd.append("type", data.type);
-    fd.append("balance", String(data.balance));
-    fd.append("currency", data.currency.toUpperCase());
-    fd.append("color", data.color);
-    fd.append("icon", data.icon);
-
+    const payload = { ...data, currency: data.currency.toUpperCase() };
     const result = editId
-      ? await updateWallet(editId, null, fd)
-      : await createWallet(null, fd);
+      ? await updateWallet(editId, payload as Record<string, unknown>)
+      : await createWallet(payload as Record<string, unknown>);
 
     if (result.success) {
       toast.success(editId ? "Wallet updated!" : "Wallet created! +25 XP");
