@@ -88,6 +88,7 @@ export async function updateWallet(
     .set({
       name: data.name,
       type: data.type,
+      balance: String(data.balance ?? 0),
       currency: data.currency ?? "USD",
       color: data.color ?? "#6C47FF",
       icon: data.icon ?? "wallet",

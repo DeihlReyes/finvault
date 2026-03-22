@@ -10,6 +10,7 @@ import {
 import { TransactionsHeader } from "./transactions-header";
 import { TransactionItem } from "@/components/transactions/transaction-item";
 import { Skeleton } from "@/components/ui/skeleton";
+import { groupByDate, formatCurrency } from "@/lib/utils";
 import type { TransactionType } from "@/lib/db/schema";
 
 export default function TransactionsPage() {
@@ -72,30 +73,71 @@ export default function TransactionsPage() {
           category: categoryId,
         }}
       />
-      <div className="space-y-2">
+      <div className="space-y-4">
         {txList.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-4xl mb-3">📭</p>
             <p className="text-sm">No transactions for this period</p>
           </div>
         ) : (
-          txList.map((tx) => (
-            <TransactionItem
-              key={tx.id}
-              id={tx.id}
-              type={tx.type as "INCOME" | "EXPENSE" | "TRANSFER"}
-              amount={Number(tx.amount)}
-              note={tx.note}
-              date={tx.date}
-              category={
-                tx.categoryName
-                  ? { name: tx.categoryName, emoji: tx.categoryEmoji ?? "💳" }
-                  : null
-              }
-              walletName={tx.walletName ?? ""}
-              currency={user?.currency ?? "USD"}
-            />
-          ))
+          groupByDate(txList).map(({ label, items: group }) => {
+            const currency = user?.currency ?? "USD";
+            const income = group
+              .filter((t) => t.type === "INCOME")
+              .reduce((s, t) => s + Number(t.amount), 0);
+            const expense = group
+              .filter((t) => t.type === "EXPENSE")
+              .reduce((s, t) => s + Number(t.amount), 0);
+            const net = income - expense;
+
+            return (
+              <div key={label} className="space-y-2">
+                {/* Date group header */}
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {label}
+                  </span>
+                  {(income > 0 || expense > 0) && (
+                    <span
+                      className={`text-xs font-semibold tabular-nums ${
+                        net > 0
+                          ? "text-emerald-400"
+                          : net < 0
+                            ? "text-red-400"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {net > 0 ? "+" : ""}
+                      {formatCurrency(net, currency)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Transactions for this group */}
+                {group.map((tx) => (
+                  <TransactionItem
+                    key={tx.id}
+                    id={tx.id}
+                    type={tx.type as "INCOME" | "EXPENSE" | "TRANSFER"}
+                    amount={Number(tx.amount)}
+                    note={tx.note}
+                    date={tx.date}
+                    category={
+                      tx.categoryName
+                        ? {
+                            name: tx.categoryName,
+                            emoji: tx.categoryEmoji ?? "💳",
+                          }
+                        : null
+                    }
+                    walletName={tx.walletName ?? ""}
+                    currency={currency}
+                    showDate={false}
+                  />
+                ))}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

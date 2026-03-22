@@ -62,6 +62,12 @@ export function TransactionDetailClient({
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState(tx.type);
+  const [walletId, setWalletId] = useState(tx.walletId);
+  const [walletDisplay, setWalletDisplay] = useState(tx.walletName);
+  const [categoryId, setCategoryId] = useState(tx.categoryId || "");
+  const [categoryDisplay, setCategoryDisplay] = useState(
+    tx.categoryName ? `${tx.categoryEmoji} ${tx.categoryName}` : ""
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -71,35 +77,39 @@ export function TransactionDetailClient({
     const data: Record<string, unknown> = {
       type,
       amount: parseFloat(fd.get("amount") as string),
-      walletId: fd.get("walletId"),
-      categoryId: fd.get("categoryId") || undefined,
+      walletId,
+      categoryId: categoryId || undefined,
       date: new Date(fd.get("date") as string),
       note: fd.get("note") || undefined,
     };
+    setEditing(false); // Close edit mode immediately (optimistic)
     startTransition(async () => {
       const result = await updateTransaction(tx.id, data) as ActionResult;
       if (result.success) {
         toast.success("Transaction updated!");
-        queryClient.invalidateQueries({ queryKey: ["transaction", tx.id] });
-        queryClient.invalidateQueries({ queryKey: ["transactions"] });
-        setEditing(false);
       } else {
         toast.error(result.error ?? "Failed to update");
+        setEditing(true); // Re-open on failure
       }
+      queryClient.invalidateQueries({ queryKey: ["transaction", tx.id] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
     });
   }
 
   function handleDelete() {
+    // Optimistic: close dialog + navigate away immediately
+    setConfirmDelete(false);
+    router.push("/transactions");
     startTransition(async () => {
       const result = await deleteTransaction(tx.id);
-      setConfirmDelete(false);
       if (result.success) {
         toast.success("Transaction deleted");
-        queryClient.invalidateQueries({ queryKey: ["transactions"] });
-        router.push("/transactions");
       } else {
         toast.error(result.error);
       }
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
     });
   }
 
@@ -233,9 +243,16 @@ export function TransactionDetailClient({
 
             <div className="space-y-1.5">
               <Label>Wallet</Label>
-              <Select name="walletId" defaultValue={tx.walletId}>
+              <Select
+                value={walletId}
+                onValueChange={(id) => {
+                  if (!id) return;
+                  setWalletId(id);
+                  setWalletDisplay(wallets.find((w) => w.id === id)?.name ?? id);
+                }}
+              >
                 <SelectTrigger className="w-full h-9">
-                  <SelectValue />
+                  <SelectValue>{walletDisplay}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {wallets.map((w) => (
@@ -250,9 +267,18 @@ export function TransactionDetailClient({
             {type !== "TRANSFER" && (
               <div className="space-y-1.5">
                 <Label>Category</Label>
-                <Select name="categoryId" defaultValue={tx.categoryId || ""}>
+                <Select
+                  value={categoryId}
+                  onValueChange={(id) => {
+                    setCategoryId(id ?? "");
+                    const c = categories.find((c) => c.id === id);
+                    setCategoryDisplay(c ? `${c.emoji} ${c.name}` : "");
+                  }}
+                >
                   <SelectTrigger className="w-full h-9">
-                    <SelectValue placeholder="No category" />
+                    <SelectValue placeholder="No category">
+                      {categoryDisplay || undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">No category</SelectItem>

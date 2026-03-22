@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, startTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CategoryForm } from "@/components/categories/category-form";
 import { archiveCategory } from "@/actions/categories";
 import { toast } from "sonner";
@@ -38,30 +38,34 @@ type Category = {
 };
 
 export function SettingsCategories({ categories }: { categories: Category[] }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [sheetMode, setSheetMode] = useState<null | "add" | { edit: Category }>(
     null,
   );
   const [archiveTarget, setArchiveTarget] = useState<Category | null>(null);
-  const [archiving, setArchiving] = useState(false);
 
   async function handleArchive() {
     if (!archiveTarget) return;
-    setArchiving(true);
-    const result = await archiveCategory(archiveTarget.id);
-    setArchiving(false);
+    const targetId = archiveTarget.id;
+
+    // Optimistic: close dialog + remove from cache immediately
     setArchiveTarget(null);
+    queryClient.setQueryData<Array<{ id: string }>>(["categories"], (old) =>
+      (old ?? []).filter((c) => c.id !== targetId)
+    );
+
+    const result = await archiveCategory(targetId);
     if (result.success) {
       toast.success("Category archived");
-      startTransition(() => router.refresh());
     } else {
       toast.error(result.error);
     }
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
   }
 
   function onFormSuccess() {
     setSheetMode(null);
-    startTransition(() => router.refresh());
+    // Cache invalidation is handled by CategoryForm itself
   }
 
   const editTarget = sheetMode && sheetMode !== "add" ? sheetMode.edit : null;
@@ -144,10 +148,9 @@ export function SettingsCategories({ categories }: { categories: Category[] }) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={archiving}
               onClick={handleArchive}
             >
-              {archiving ? "Archiving…" : "Archive"}
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

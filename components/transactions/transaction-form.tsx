@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { transactionSchema } from "@/lib/validators/transaction";
 import { createTransaction } from "@/actions/transactions";
@@ -42,6 +43,7 @@ type Props = {
 export function TransactionForm({ wallets, categories, onSuccess }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const [serverError, setServerError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<TransactionInput>({
     resolver: zodResolver(transactionSchema) as Resolver<TransactionInput>,
@@ -72,6 +74,9 @@ export function TransactionForm({ wallets, categories, onSuccess }: Props) {
       });
       form.reset();
       onSuccess?.();
+      // Invalidate both — transaction list + wallet balances changed
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
     } else if (!result.success) {
       setServerError(result.error ?? "Something went wrong. Please try again.");
     }

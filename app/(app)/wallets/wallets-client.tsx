@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, startTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { WalletForm } from "@/components/wallets/wallet-form";
 import { archiveWallet } from "@/actions/wallets";
@@ -46,24 +46,28 @@ type Props = {
 };
 
 export function WalletsClient({ wallets, totalBalance, currency }: Props) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editWallet, setEditWallet] = useState<Wallet | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Wallet | null>(null);
-  const [archiving, setArchiving] = useState(false);
 
   async function handleArchive() {
     if (!archiveTarget) return;
-    setArchiving(true);
-    const result = await archiveWallet(archiveTarget.id);
-    setArchiving(false);
+    const targetId = archiveTarget.id;
+
+    // Optimistic: close dialog + remove from cache immediately
     setArchiveTarget(null);
+    queryClient.setQueryData<Array<{ id: string }>>(["wallets"], (old) =>
+      (old ?? []).filter((w) => w.id !== targetId)
+    );
+
+    const result = await archiveWallet(targetId);
     if (result.success) {
       toast.success("Wallet archived");
-      startTransition(() => router.refresh());
     } else {
       toast.error(result.error);
     }
+    queryClient.invalidateQueries({ queryKey: ["wallets"] });
   }
 
   function openAdd() {
@@ -78,7 +82,7 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
 
   function onFormSuccess() {
     setSheetOpen(false);
-    startTransition(() => router.refresh());
+    // Cache invalidation is handled by WalletForm itself
   }
 
   return (
@@ -175,10 +179,9 @@ export function WalletsClient({ wallets, totalBalance, currency }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={archiving}
               onClick={handleArchive}
             >
-              {archiving ? "Archiving…" : "Archive"}
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

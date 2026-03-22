@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { walletSchema } from "@/lib/validators/wallet";
 import type { Resolver } from "react-hook-form";
@@ -57,6 +58,7 @@ const PALETTE = [
 
 export function WalletForm({ defaultCurrency = "USD", onSuccess, editId, initialValues }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<WalletInput>({
     resolver: zodResolver(walletSchema) as Resolver<WalletInput>,
@@ -83,6 +85,7 @@ export function WalletForm({ defaultCurrency = "USD", onSuccess, editId, initial
     if (result.success) {
       toast.success(editId ? "Wallet updated!" : "Wallet created! +25 XP");
       onSuccess?.();
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
     } else {
       setServerError(result.error ?? "Something went wrong. Please try again.");
     }

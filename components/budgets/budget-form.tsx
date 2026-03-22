@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { budgetSchema } from "@/lib/validators/budget";
 import type { Resolver } from "react-hook-form";
@@ -51,6 +52,7 @@ const MONTHS = [
 export function BudgetForm({ categories, onSuccess }: Props) {
   const now = new Date();
   const [serverError, setServerError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<BudgetInput>({
     resolver: zodResolver(budgetSchema) as Resolver<BudgetInput>,
@@ -73,6 +75,7 @@ export function BudgetForm({ categories, onSuccess }: Props) {
     if (result.success) {
       toast.success("Budget created! +50 XP");
       onSuccess?.();
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
     } else {
       setServerError(result.error ?? "Something went wrong. Please try again.");
     }

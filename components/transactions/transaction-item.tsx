@@ -3,10 +3,11 @@
 import { useState, startTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSwipeToDelete } from "@/hooks/use-swipe-to-delete";
 import { deleteTransaction } from "@/actions/transactions";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, getDateLabel } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -27,6 +28,8 @@ type Props = {
   category: { name: string; emoji: string } | null;
   walletName: string;
   currency: string;
+  /** When false, hides the date from the sub-label (use inside grouped lists). Defaults to true. */
+  showDate?: boolean;
 };
 
 export function TransactionItem({
@@ -38,8 +41,10 @@ export function TransactionItem({
   category,
   walletName,
   currency,
+  showDate = true,
 }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -61,6 +66,8 @@ export function TransactionItem({
     const result = await deleteTransaction(id);
     if (result.success) {
       toast.success("Transaction deleted");
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
       startTransition(() => router.refresh());
     } else {
       setDeleted(false); // roll back
@@ -144,7 +151,7 @@ export function TransactionItem({
                   {note ?? category?.name ?? "Transaction"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                  {walletName} · {formatDate(date)}
+                  {walletName}{showDate ? ` · ${getDateLabel(date)}` : ""}
                 </p>
               </div>
 

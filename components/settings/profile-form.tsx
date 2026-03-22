@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { updateProfileSchema } from "@/lib/validators/user";
 import type { Resolver } from "react-hook-form";
@@ -60,6 +61,7 @@ type Props = {
 
 export function ProfileForm({ initialValues }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<ProfileInput>({
     resolver: zodResolver(updateProfileSchema) as Resolver<ProfileInput>,
@@ -80,6 +82,7 @@ export function ProfileForm({ initialValues }: Props) {
     if (result.success) {
       toast.success("Profile updated!");
       form.reset(data);
+      queryClient.invalidateQueries({ queryKey: ["user"] });
     } else {
       setServerError(result.error ?? "Something went wrong.");
     }

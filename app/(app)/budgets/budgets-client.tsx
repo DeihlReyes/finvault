@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, startTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { BudgetForm } from "@/components/budgets/budget-form";
 import { deleteBudget } from "@/actions/budgets";
@@ -47,28 +47,32 @@ type Props = {
 };
 
 export function BudgetsClient({ budgets, categories, currency }: Props) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Budget | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    setDeleting(true);
-    const result = await deleteBudget(deleteTarget.id);
-    setDeleting(false);
+    const targetId = deleteTarget.id;
+
+    // Optimistic: close dialog + remove from cache immediately
     setDeleteTarget(null);
+    queryClient.setQueryData<Array<{ id: string }>>(["budgets"], (old) =>
+      (old ?? []).filter((b) => b.id !== targetId)
+    );
+
+    const result = await deleteBudget(targetId);
     if (result.success) {
       toast.success("Budget deleted");
-      startTransition(() => router.refresh());
     } else {
       toast.error(result.error);
     }
+    queryClient.invalidateQueries({ queryKey: ["budgets"] });
   }
 
   function onFormSuccess() {
     setSheetOpen(false);
-    startTransition(() => router.refresh());
+    // Cache invalidation is handled by BudgetForm itself
   }
 
   const usedCategoryIds = new Set(budgets.map((b) => b.categoryId));
@@ -165,10 +169,9 @@ export function BudgetsClient({ budgets, categories, currency }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={deleting}
               onClick={handleDelete}
             >
-              {deleting ? "Deleting…" : "Delete"}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

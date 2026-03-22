@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { resetDatabase, getDb } from "@/lib/db";
+import { resetDatabase, importDatabase, getDb } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +20,36 @@ export function DangerZone() {
   const [open, setOpen] = useState(false);
   const [phrase, setPhrase] = useState("");
   const [isPending, startTransition] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = ""; // reset so same file can be picked again
+    if (!file) return;
+
+    if (!file.name.endsWith(".json")) {
+      toast.error("Please select a .json export file");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+
+        if (!payload.users || !Array.isArray(payload.users)) {
+          toast.error("Invalid backup file — missing users data");
+          return;
+        }
+
+        await importDatabase(payload);
+        // importDatabase does window.location.replace — execution stops here
+      } catch {
+        toast.error("Import failed. Make sure the file is a valid FinVault backup.");
+      }
+    });
+  }
 
   function handleOpen() {
     setPhrase("");
@@ -95,9 +125,25 @@ export function DangerZone() {
 
   return (
     <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleImport}
+      />
+
       <div className="flex flex-col gap-3">
         <Button variant="outline" onClick={handleExportJson}>
           Download all my data
+        </Button>
+
+        <Button
+          variant="outline"
+          disabled={isPending}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {isPending ? "Importing…" : "Import backup"}
         </Button>
 
         <Button variant="destructive" onClick={handleOpen}>

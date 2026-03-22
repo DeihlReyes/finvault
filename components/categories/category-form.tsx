@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categorySchema } from "@/lib/validators/category";
 import type { Resolver } from "react-hook-form";
@@ -42,6 +43,7 @@ const EMOJI_SUGGESTIONS = [
 
 export function CategoryForm({ onSuccess, editId, initialValues }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema) as Resolver<CategoryInput>,
@@ -65,6 +67,7 @@ export function CategoryForm({ onSuccess, editId, initialValues }: Props) {
     if (result.success) {
       toast.success(editId ? "Category updated!" : "Category created!");
       onSuccess?.();
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     } else {
       setServerError(result.error ?? "Something went wrong. Please try again.");
     }

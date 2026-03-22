@@ -69,3 +69,44 @@ export function formatCompactNumber(n: number): string {
   return String(n);
 }
 
+/**
+ * Returns a human-readable date group label:
+ * "Today", "Yesterday", weekday name (within 7 days), or "Mar 15" / "Mar 15, 2023"
+ */
+export function getDateLabel(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((today.getTime() - target.getTime()) / 86_400_000);
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return d.toLocaleDateString("en-US", { weekday: "long" });
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+
+/**
+ * Groups an array of items (each with a `date` field) by their getDateLabel value.
+ * Preserves the order of first occurrence.
+ */
+export function groupByDate<T extends { date: Date | string }>(
+  items: T[]
+): { label: string; items: T[] }[] {
+  const map = new Map<string, T[]>();
+  for (const item of items) {
+    const label = getDateLabel(item.date);
+    if (!map.has(label)) map.set(label, []);
+    map.get(label)!.push(item);
+  }
+  return Array.from(map.entries()).map(([label, groupItems]) => ({
+    label,
+    items: groupItems,
+  }));
+}
+
